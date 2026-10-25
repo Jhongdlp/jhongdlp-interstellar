@@ -165,8 +165,6 @@ const EMAIL = 'hello@jhongdlp.com';
       radial-gradient(ellipse 60% 45% at 28% 20%, rgba(70, 48, 28, .35), transparent 70%),
       linear-gradient(#140f0b, #0a0705 55%, #050302);
     color: #f6e4c6;
-    /* the whole room (dust, beam, grain) sinks into black at the bottom, where the footer's space begins */
-    mask-image: linear-gradient(#000 calc(100% - 14svh), transparent);
   }
   /* screen blend: the renderer's black clears to nothing, so the room's background shows through.
      The dust also fades in from the top so nothing sits on the seam with the gallery. */
@@ -196,6 +194,8 @@ const EMAIL = 'hello@jhongdlp.com';
   .contact::after {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background:
+      /* topmost: the room sinks slowly into black so it flows into the footer's space (eased, no visible edge) */
+      linear-gradient(transparent 50%, rgba(0, 0, 0, .08) 60%, rgba(0, 0, 0, .3) 70%, rgba(0, 0, 0, .62) 82%, rgba(0, 0, 0, .9) 93%, #000),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .92 0 0 0 0 .8 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
       radial-gradient(ellipse 75% 65% at 50% 60%, transparent 40%, rgba(0, 0, 0, .65)),
       linear-gradient(#140f0b, rgba(20, 15, 11, .7) 8%, transparent 30%);
