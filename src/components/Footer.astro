@@ -1,0 +1,189 @@
+---
+import { siGithub, siX } from 'simple-icons';
+// Epilogue: the Endurance in orbit over a new world. The name rests on the planet's dark side.
+const links = [['Inicio', '#'], ['Sobre mí', '#sobre-mi'], ['Proyectos', '#proyectos'], ['Contacto', '#contacto']];
+// same networks as the live footer on jhongdlp.com; LinkedIn is no longer in simple-icons, so its glyph is inline
+const social = [
+  ['GitHub', 'https://github.com/Jhongdlp', siGithub.path],
+  ['LinkedIn', 'https://www.linkedin.com/in/jhon-guadalupe-2a4194382/', 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.064 2.064 0 1 1 0-4.128 2.064 2.064 0 0 1 0 4.128zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z'],
+  ['X', 'https://x.com/jhongdlp', siX.path],
+  ['Email', 'mailto:hello@jhongdlp.com', 'M2 5.5A1.5 1.5 0 0 1 3.5 4h17A1.5 1.5 0 0 1 22 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18.5zm2 .9V18h16V6.4l-8 5.6z'],
+];
+const year = new Date().getFullYear();
+---
+
+<footer class="outro">
+  <canvas aria-hidden="true"></canvas>
+
+  <div class="cols">
+    <nav aria-label="Pie de página">
+      <p class="mono">Navegación</p>
+      {links.map(([label, href]) => <a href={href}><span class="clip"><span data-text={label}>{label}</span></span></a>)}
+    </nav>
+    <div>
+      <p class="mono">Redes</p>
+      <div class="icons">
+        {social.map(([label, href, d]) => (
+          <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener" aria-label={label} title={label}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} fill-rule="evenodd" /></svg>
+          </a>
+        ))}
+      </div>
+    </div>
+    <div>
+      <p class="mono">Hora local · Ecuador</p>
+      <p class="clock"><time>--:--</time><span class="mono">GMT−5</span></p>
+    </div>
+  </div>
+
+  <p class="name" aria-label="Jhongdlp">
+    {[...'Jhongdlp'].map((c, i) => <span aria-hidden="true" style={`--i:${i}`}>{c}</span>)}<sup aria-hidden="true">®</sup>
+  </p>
+
+  <div class="base mono">
+    <span>© {year} Jhongdlp</span>
+    <button type="button" class="up" aria-label="Volver al inicio">
+      <span class="mono">Volver al horizonte</span>
+      <span class="chip" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
+      </span>
+    </button>
+  </div>
+</footer>
+
+<script>
+  const root = document.querySelector<HTMLElement>(".outro")!;
+  const canvas = root.querySelector('canvas')!;
+
+  root.querySelector('.up')!.addEventListener('click', () => scrollTo({ top: 0 }));
+
+  const time = root.querySelector('time')!;
+  const fmt = new Intl.DateTimeFormat('es-EC', { timeZone: 'America/Guayaquil', hour: '2-digit', minute: '2-digit', hour12: false });
+  const tick = () => (time.textContent = fmt.format(new Date()));
+  tick();
+  setInterval(tick, 15000);
+
+  new IntersectionObserver(([e]) => e.isIntersecting && root.classList.add('on'), { threshold: 0.35 }).observe(root);
+
+  // three.js loads on approach, renders only while visible; scroll drives the descent into orbit
+  let scene: ReturnType<typeof import('../scripts/endurance').createEndurance> = null;
+  let seen = false;
+  const progress = () => {
+    const r = root.getBoundingClientRect();
+    scene?.progress(Math.min(1, Math.max(0, 1 - r.top / innerHeight)));
+  };
+  addEventListener('scroll', progress, { passive: true });
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; seen ? scene?.start() : scene?.stop(); }).observe(root);
+  const load = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    load.disconnect();
+    import('../scripts/endurance').then(({ createEndurance }) => {
+      scene = createEndurance(canvas);
+      progress();
+      if (seen) scene?.start();
+      root.classList.add('ready');
+    });
+  }, { rootMargin: '100% 0px' });
+  load.observe(root);
+</script>
+
+<style>
+  .outro {
+    position: relative;
+    height: 100svh;
+    min-height: 620px;
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    padding: clamp(28px, 6svh, 64px) clamp(16px, 5vw, 80px) clamp(16px, 3svh, 28px);
+    overflow: hidden;
+    /* cold neutrals here: the name is the only warm thing on screen */
+    --ink: #dfe2e6; --dim: rgba(223, 226, 230, .42);
+    color: var(--ink);
+    background: #000;
+  }
+  canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; transition: opacity 2.4s;
+    mask-image: linear-gradient(transparent, #000 25%);
+  }
+  .ready canvas { opacity: 1; }
+  .outro > :not(canvas) { position: relative; z-index: 1; }
+  /* soft floor shade so the copy stays readable over the planet */
+  .outro::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(transparent 70%, rgba(0, 0, 0, .55)); }
+
+
+  .up {
+    padding: 4px 4px 4px 16px; font: inherit; color: inherit;
+    display: inline-flex; align-items: center; gap: 14px;
+    background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .14); border-radius: 999px;
+    backdrop-filter: blur(10px); cursor: pointer; transition: border-color .3s, background .3s;
+  }
+  .up .mono { color: var(--ink); }
+  .up:hover, .up:focus-visible { border-color: rgba(255, 255, 255, .45); background: rgba(255, 255, 255, .08); }
+  .up:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .chip { position: relative; overflow: hidden; width: 32px; height: 32px; border-radius: 50%; background: #e9ecef; color: #000; }
+  .chip svg {
+    position: absolute; inset: 0; margin: auto; width: 16px; height: 16px;
+    fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+    transition: translate .5s cubic-bezier(.16, 1, .3, 1);
+  }
+  .chip svg + svg { translate: 0 200%; }
+  .up:hover .chip svg, .up:focus-visible .chip svg { translate: 0 -200%; }
+  .up:hover .chip svg + svg, .up:focus-visible .chip svg + svg { translate: 0; }
+
+  /* ---------- columns ---------- */
+  .cols {
+    align-self: start;
+    display: grid; grid-template-columns: repeat(3, minmax(0, max-content)); gap: clamp(32px, 7vw, 120px);
+    margin-bottom: clamp(8px, 2svh, 24px);
+  }
+  .cols > * { display: grid; align-content: start; gap: 8px; }
+  .cols .mono { margin-bottom: 6px; }
+  .cols a { color: var(--ink); text-decoration: none; font-size: clamp(15px, 1.2vw, 18px); font-weight: 500; justify-self: start; }
+  .cols a:focus-visible { outline: 2px solid #fff; outline-offset: 4px; border-radius: 4px; }
+  /* same text roll as the header */
+  .clip { display: block; height: 1.4em; line-height: 1.4; overflow: hidden; }
+  .clip span { position: relative; display: block; transition: translate .5s cubic-bezier(.16, 1, .3, 1); }
+  .clip span::after { content: attr(data-text); position: absolute; left: 0; top: 100%; color: #fff; }
+  .cols a:hover .clip span, .cols a:focus-visible .clip span { translate: 0 -100%; }
+  /* round icon buttons; the glyph lifts and brightens on hover */
+  .icons { display: grid; gap: 10px; justify-items: start; }
+  .cols .icons a {
+    display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .35); background: rgba(255, 255, 255, .08); color: #fff;
+    transition: color .3s, border-color .3s, background .3s, translate .3s cubic-bezier(.16, 1, .3, 1);
+  }
+  .icons svg { width: 18px; height: 18px; fill: currentColor; }
+  .cols .icons a:hover, .cols .icons a:focus-visible { color: #000; border-color: #fff; background: #fff; translate: 3px 0; }
+  .clock { display: flex; align-items: baseline; gap: 10px; }
+  .clock time { font-size: clamp(28px, 3vw, 44px); font-weight: 300; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+
+  /* ---------- the name, resting on the night side of the planet ---------- */
+  .name {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    font-weight: 600; font-size: clamp(64px, 18.5vw, 360px); line-height: .78; letter-spacing: -.06em;
+    margin: 0 -.02em clamp(10px, 2svh, 20px);
+    overflow: hidden; padding-bottom: .04em;
+  }
+  .name span {
+    display: block;
+    /* lit from the horizon above, dissolving into the dark below */
+    background: linear-gradient(#ffb877, #ff9a3c 40%, rgba(255, 154, 60, .06) 96%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    translate: 0 105%; transition: translate 1.4s cubic-bezier(.16, 1, .3, 1) calc(var(--i) * 60ms);
+  }
+  .on .name span { translate: 0; }
+  .name sup { font-size: .14em; font-weight: 400; letter-spacing: 0; color: var(--dim); margin-top: .5em; }
+
+  .base { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid rgba(255, 255, 255, .1); padding-top: 12px; }
+
+  @media (max-width: 860px) {
+    .outro { min-height: 680px; padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+    .cols { grid-template-columns: 1fr 1fr; row-gap: 24px; }
+    .cols > :last-child { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .name span { opacity: 1; translate: 0; transition: none; }
+  }
+</style>

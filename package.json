@@ -1,0 +1,20 @@
+{
+  "name": "portafolio",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^7.4.1",
+    "simple-icons": "^16.35.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/three": "^0.186.0",
+    "typescript": "^6.0.3"
+  }
+}

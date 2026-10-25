@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.astro/
+
+# 84MB and unused (the page plays insideebb.mp4)
+public/projects/insideebb.gif

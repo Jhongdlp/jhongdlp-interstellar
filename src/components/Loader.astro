@@ -1,0 +1,233 @@
+<div class="loader" role="progressbar" aria-label="Cargando" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <svg class="scene" viewBox="0 0 400 160" aria-hidden="true">
+    <defs>
+      <radialGradient id="glow" cx=".5" cy="1" r=".6">
+        <stop offset="0" stop-color="#fff" stop-opacity=".22" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </radialGradient>
+      <linearGradient id="horizon">
+        <stop offset="0" stop-color="#fff" stop-opacity="0" />
+        <stop offset=".5" stop-color="#fff" stop-opacity=".7" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+      <linearGradient id="beam" x1="0" x2="1">
+        <stop offset="0" stop-color="#fff" stop-opacity=".45" />
+        <stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <!-- backlight: the silhouette reads against a glowing horizon, like the hero -->
+    <rect class="glow" x="0" y="45" width="400" height="90" fill="url(#glow)" />
+    <rect x="0" y="134.5" width="400" height="1" fill="url(#horizon)" />
+    <g class="lines"></g>
+    <g class="fx"></g>
+    <!-- motion trail: ghosts of the truck that stretch out behind it with speed -->
+    <use class="ghost" href="#lt-truck" />
+    <use class="ghost" href="#lt-truck" />
+    <g class="truck" id="lt-truck">
+      <g class="body">
+        <path class="beam" d="M228 52 L320 36 L320 72 Z" />
+        <path class="shell" d="M6 52 H104 V22 Q104 18 108 18 H150 Q154 18 156 22 L164 42 H222 Q228 42 228 48 V76 Q228 80 224 80 H10 Q6 80 6 76 Z" />
+        <path class="glass" d="M112 24 H148 L156 42 H112 Z" />
+        <path class="driver" d="M126 42 V35 Q126 31 130 30 Q134 31 134 35 V42 Z M121 28.5 H139 M126 28.5 Q126 23.5 130 23.5 Q134 23.5 134 28.5" />
+        <circle class="lamp" cx="225" cy="52" r="2.5" />
+        <circle class="arch" cx="50" cy="82" r="17" />
+        <circle class="arch" cx="190" cy="82" r="17" />
+      </g>
+      <g class="wheel"><circle cx="50" cy="82" r="14" /><circle cx="50" cy="82" r="5" /><path d="M50 74 V90 M42 82 H58" /></g>
+      <g class="wheel"><circle cx="190" cy="82" r="14" /><circle cx="190" cy="82" r="5" /><path d="M190 74 V90 M182 82 H198" /></g>
+    </g>
+    <g class="grass"></g>
+  </svg>
+  <p class="name" aria-hidden="true">{[...'JHONGDLP'].map((c) => <span>{c}</span>)}</p>
+  <span class="mono pct" aria-hidden="true">000</span>
+</div>
+<noscript><style>.loader { display: none !important; }</style></noscript>
+
+<script>
+  const el = document.querySelector<HTMLElement>('.loader')!;
+  const $ = (s: string) => el.querySelector<SVGElement>(s)!;
+  const pct = el.querySelector('.pct')!;
+  const hero = document.querySelector('.hero');
+
+  // Real milestones: fonts, every asset, and the hero's big shader compiled (it adds .ready).
+  const steps: Promise<unknown>[] = [
+    document.fonts.ready,
+    new Promise((r) => (document.readyState === 'complete' ? r(0) : addEventListener('load', r, { once: true }))),
+    new Promise((r) => {
+      if (!hero || hero.classList.contains('ready')) return r(0);
+      new MutationObserver((_, o) => { if (hero.classList.contains('ready')) { o.disconnect(); r(0); } })
+        .observe(hero, { attributes: true, attributeFilter: ['class'] });
+    }),
+  ];
+  let done = 0;
+  steps.forEach((s) => s.then(() => done++));
+  setTimeout(() => { done = steps.length; }, 15000); // never trap the visitor behind the loader
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const make = (parent: SVGElement, tag: string) => parent.appendChild(document.createElementNS(NS, tag));
+  const truck = $('.truck'), body = $('.body');
+  const letters = [...el.querySelectorAll<HTMLElement>('.name span')];
+  const ghosts = [...el.querySelectorAll<SVGElement>('.ghost')];
+  const t0 = performance.now();
+  const backOut = (x: number) => 1 + 2.2 * (x - 1) ** 3 + 1.2 * (x - 1) ** 2; // overshoots, then settles
+  const wheels = [...el.querySelectorAll<SVGElement>('.wheel')];
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+  // wind streaks in the sky, wheat stalks rushing past in front, a pool of dust puffs
+  const lines = Array.from({ length: 10 }, () => ({ el: make($('.lines'), 'line'), x: rnd(0, 440), y: rnd(20, 120), w: rnd(.3, 1) }));
+  const grass = Array.from({ length: 34 }, () => ({ el: make($('.grass'), 'line'), x: rnd(0, 400), h: rnd(3, 11), lean: rnd(-1, 1) }));
+  const puffs = Array.from({ length: 24 }, () => ({ el: make($('.fx'), 'circle'), x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1 }));
+
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let shown = 0, speed = 0, angle = 0, tx = 0, exitV = 0, spawn = 0, last = performance.now();
+
+  const tick = (now: number) => {
+    const dt = Math.min((now - last) / 1000, .05), t = now / 1000;
+    last = now;
+    const all = done >= steps.length;
+    // shown progress creeps toward the next milestone while waiting, then sprints when all are in
+    shown += ((all ? 1 : (done + .8) / steps.length) - shown) * (all ? .08 : .02);
+    const v = Math.round(shown * 100);
+    pct.textContent = String(v).padStart(3, '0');
+    el.ariaValueNow = String(v);
+    // letters fill one after another, bottom-up like liquid, with a wave on the surface; pop when full
+    letters.forEach((l, i) => {
+      const f = Math.min(Math.max(shown * letters.length - i, 0), 1);
+      const wave = f > 0 && f < 1 ? Math.sin(t * 9 + i * 1.3) * 6 : 0;
+      l.style.setProperty('--f', `${(f * 100 + wave).toFixed(1)}%`);
+      l.classList.toggle('full', f >= 1);
+    });
+
+    const exiting = all && shown > .995;
+    if (exiting) exitV += 1400 * dt;    // floors it and disappears into the dark
+    tx += exitV * dt;
+    if (still) { if (exiting) finish(); else requestAnimationFrame(tick); return; }
+
+    // world speed (px/s) climbs with the progress: the truck accelerates as the page loads
+    const target = 140 + shown * 820 + exitV;
+    const accel = (target - speed) / Math.max(dt, 1e-3);
+    speed = target;
+    angle += (speed * dt / 14) * 57.3;  // wheels roll without slipping (r = 14)
+    wheels.forEach((w, i) => w.setAttribute('transform', `rotate(${angle} ${i ? 190 : 50} 82)`));
+
+    // suspension: rough dirt road that gets rougher with speed; nose lifts under throttle
+    const k = .4 + shown;
+    const bump = Math.sin(t * 19) * .6 * k + Math.sin(t * 31 + 1) * .4 * k + (Math.random() - .5) * shown * .6;
+    const tilt = -(.5 + shown * 1.5 + Math.min(accel / 400, 3) + (exiting ? 3 : 0));
+    body.setAttribute('transform', `translate(0 ${bump}) rotate(${tilt} 50 82)`);
+    // drives in from the dark with a little overshoot, then hunts back and forth under throttle
+    const intro = -330 * (1 - backOut(Math.min((now - t0) / 1300, 1)));
+    truck.setAttribute('transform', `translate(${85 + intro + tx + Math.sin(t * 1.7) * 5} 38)`);
+    const trail = Math.min(speed / 1000, 1.6);
+    ghosts.forEach((g, i) => {
+      g.setAttribute('transform', `translate(${-(i + 1) * 9 * trail} 0)`);
+      g.style.opacity = String(trail * (.22 - i * .09));
+    });
+
+    for (const l of lines) {
+      const len = 6 + speed * .05 * l.w;
+      l.x -= speed * dt * (1 + l.w);
+      if (l.x + len < 0) { l.x = rnd(400, 480); l.y = rnd(20, 120); }
+      l.el.setAttribute('x1', String(l.x)); l.el.setAttribute('x2', String(l.x + len));
+      l.el.setAttribute('y1', String(l.y)); l.el.setAttribute('y2', String(l.y));
+      l.el.style.opacity = String(Math.min(speed / 700, 1) * l.w * .35);
+    }
+    // foreground wheat moves faster than the truck's ground (parallax) and bends back in the wind
+    const bend = Math.min(speed / 900, 1.4);
+    for (const g of grass) {
+      g.x -= speed * dt * 1.5;
+      if (g.x < -10) { g.x = rnd(400, 420); g.h = rnd(3, 11); }
+      g.el.setAttribute('x1', String(g.x)); g.el.setAttribute('y1', '160');
+      g.el.setAttribute('x2', String(g.x - g.h * (bend + g.lean * .3 + Math.sin(t * 6 + g.x) * .15)));
+      g.el.setAttribute('y2', String(160 - 12 - g.h));
+    }
+
+    // dust off the rear tyre, more the harder it pulls
+    spawn += dt * (6 + shown * 30);
+    for (; spawn >= 1; spawn--) {
+      const p = puffs.find((q) => q.life <= 0);
+      if (!p) break;
+      p.x = 85 + intro + tx + rnd(38, 48);
+      p.y = 38 + rnd(93, 96);
+      p.vx = -speed * rnd(.3, .6);
+      p.vy = -rnd(10, 40);
+      p.max = p.life = rnd(.4, .9);
+    }
+    for (const p of puffs) {
+      if (p.life <= 0) { p.el.style.opacity = '0'; continue; }
+      p.life -= dt;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 60 * dt;
+      const a = p.life / p.max;
+      p.el.setAttribute('cx', String(p.x)); p.el.setAttribute('cy', String(Math.min(p.y, 134)));
+      p.el.setAttribute('r', String(1.5 + (1 - a) * 5));
+      p.el.style.opacity = String(a * .3);
+    }
+
+    if (tx > 380) return finish();
+    requestAnimationFrame(tick);
+  };
+  const finish = () => {
+    el.classList.add('done');
+    setTimeout(() => el.remove(), 1100);
+  };
+  requestAnimationFrame(tick);
+</script>
+
+<style>
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 8px;
+    background: #000;
+    overflow: hidden;
+    clip-path: inset(0);
+    transition: clip-path 1s cubic-bezier(.76, 0, .24, 1), visibility 0s 1s;
+  }
+  :global(html:has(.loader:not(.done))) { overflow: hidden; }
+
+  .scene { width: min(76vw, 360px); overflow: visible; }
+  .glow { animation: breathe 3.2s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .6; } }
+  .lines line { stroke: #fff; stroke-width: .8; stroke-linecap: round; }
+  .grass line { stroke: rgba(255, 255, 255, .3); stroke-width: 1; stroke-linecap: round; }
+  .fx circle { fill: #fff; }
+
+  .shell { fill: #fff; }
+  .glass { fill: #2b2b2b; }
+  .arch { fill: #000; }
+  .driver { fill: #000; stroke: #000; stroke-width: 2.2; stroke-linecap: round; }
+  .lamp { fill: #fff; }
+  .beam { fill: url(#beam); animation: flicker 2.6s steps(1) infinite; }
+  @keyframes flicker { 0%, 100% { opacity: 1; } 46% { opacity: .6; } 48% { opacity: 1; } }
+  .wheel circle { fill: #fff; }
+  .wheel circle + circle { fill: #000; }
+  .wheel path { stroke: #000; stroke-width: 1.6; }
+  .ghost { pointer-events: none; }
+
+  /* the name fills left to right with the load */
+  .name {
+    font-weight: 500;
+    font-size: clamp(14px, 1.8vw, 18px);
+    letter-spacing: .6em;
+    padding-left: .6em; /* balance the trailing letter-spacing */
+    transition: letter-spacing 1s cubic-bezier(.16, 1, .3, 1), opacity .7s;
+  }
+  .pct { font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, .4); }
+
+  /* exit: the screen shuts down onto the horizon line and the hero is behind it */
+  .done { clip-path: inset(50% 0 50% 0); visibility: hidden; pointer-events: none; }
+  .name span {
+    --f: 0%;
+    display: inline-block;
+    background: linear-gradient(to top, #ff9a3c var(--f), rgba(255, 255, 255, .14) var(--f));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .name .full { animation: pop .6s cubic-bezier(.34, 1.8, .64, 1); filter: drop-shadow(0 0 6px rgba(255, 154, 60, .55)); }
+  @keyframes pop { 40% { translate: 0 -5px; scale: 1.15; } }
+  .done .name { letter-spacing: 1.1em; opacity: 0; }
+</style>

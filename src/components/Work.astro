@@ -1,0 +1,355 @@
+---
+// Selected work. Pinned over the end of the hero's fall: in the black, a point of light turns on into the
+// first screen (old-TV style); then scrolling drives a curved 3D track of projects through space, with
+// wireframe cubes floating at different depths (CSS 3D only: the WebGL is already off by now).
+// gif: path under /public (.mp4 plays as a looping video); mgif: optional 4:5 phone capture.
+// others: names shown as a list on the screen (catch-all card); cta: link text.
+// shots: still images shown as a mini bento grid (game in progress). Without any, a flat placeholder.
+type Project = { name: string; kind: string; sub: string; desc: string; meta: string; url?: string; tint: string; gif?: string; mgif?: string; mascot?: string; shots?: string[]; others?: string[]; cta?: string };
+const projects: Project[] = [
+  { name: 'INSIDEEBB', kind: 'Estudio de Software e IA', sub: 'Producto, agentes de IA y e-commerce', tint: '#8f6cf0',
+    desc: 'Sitio del estudio con identidad editorial, sistema bilingüe ES/EN, páginas de producto y blog técnico. Diseño de sistemas y software a medida.',
+    meta: 'Quito, Ecuador · 2026', url: 'https://insideebb.com', mascot: '/projects/insideebb-logo.svg', gif: '/projects/insideebb.mp4', mgif: '/projects/insideebb-m.mp4' },
+  { name: 'Global CEC', kind: 'Academia de inglés online', sub: 'Landing de becas y aula virtual', tint: '#d42a2a',
+    desc: 'Programa de inglés alineado al MCER (A1 a B2) con postulación a becas, clases en vivo, asistente virtual y un aula con progreso, ejercicios interactivos y certificación.',
+    meta: 'Ecuador · 2026', gif: '/projects/globalcec.mp4', mgif: '/projects/globalcec-m.mp4', mascot: '/projects/glo.webp' },
+  { name: 'Bizzio', kind: 'E-commerce con IA', sub: 'Plataforma SaaS de tiendas online', tint: '#7b5cff',
+    desc: 'Constructor de tiendas donde un vendedor de IA atiende y vende 24/7. Pagos locales integrados (Payphone y De Una), catálogo, estado de pedidos y cero código.',
+    meta: 'Ecuador · 2026', url: 'https://bizzio.shop', mascot: '/projects/bizzio-icono.svg',
+    gif: '/projects/bizzio.mp4', mgif: '/projects/bizzio-m.mp4' },
+  { name: 'Kammel', kind: 'Cliente SSH para Android', sub: 'Terminal y editor de código open-source', tint: '#ff5a36',
+    desc: 'App móvil todo-en-uno: cliente SSH, terminal, explorador SFTP y editor de código. Permite ejecutar agentes de IA (Claude Code, Gemini CLI) directamente por SSH.',
+    meta: 'Open source · 2026', url: 'https://kammel.app', mascot: '/projects/kammel-icono.webp',
+    gif: '/projects/kammel.mp4', mgif: '/projects/kammel-m.mp4' },
+  { name: 'TensorMesh', kind: 'Algoritmos de IA en 3D', sub: 'Nebulosa de embeddings · 50.000 palabras en 3D', tint: '#c04dff',
+    desc: 'Atlas vectorial navegable: cada punto es una palabra y su posición sale de un embedding de 300 dimensiones. Vuela hasta una palabra, mira sus vecinos, compara y resuelve analogías en vivo sobre tu GPU.',
+    meta: 'Web · WebGPU · 2026', url: 'https://tensormesh.vercel.app/embedding-nebula',
+    gif: '/projects/tensormesh.mp4', mgif: '/projects/tensormesh-m.mp4' },
+  { name: 'Space Colony', kind: 'Videojuego en desarrollo', sub: 'Simulador de colonización espacial', tint: '#f08a3c',
+    desc: 'Lanza cohetes con física newtoniana real, construye estaciones en órbita y aterriza en otros planetas. Se simula en 2D y se renderiza en 3D con three.js, pensado para móvil.',
+    meta: 'Android · En desarrollo · 2026',
+    shots: ['/projects/sc-despegue.webp', '/projects/sc-estacion.webp', '/projects/sc-marte.webp'] },
+  { name: 'Otros proyectos', kind: 'Open source y experimentos', sub: 'Lo que construyo entre proyecto y proyecto', tint: '#f6e4c6',
+    desc: 'Un jefe de videojuego movido por el conectoma de una mosca, una Dynamic Island para monitorear agentes de IA, un detector de código muerto y más. Todo en mi GitHub.',
+    meta: 'GitHub · Jhongdlp', url: 'https://github.com/Jhongdlp', cta: 'Ver GitHub ↗',
+    others: ['FlyBrain', 'Rimarc', 'obit', 'Raccoony', 'UTITech', 'ApiRag', 'GlazeTerminal'] },
+];
+// floating objects: x in "project" units along the track, y in svh, z in px (negative = far), s = size px
+const decos = [
+  { t: 'cube', x: -0.5, y: 24, z: 220, s: 64 },
+  { t: 'cube', x: 1.45, y: -28, z: -260, s: 110 },
+  { t: 'cube', x: 2.6, y: 27, z: 160, s: 48 },
+  { t: 'cube', x: 4.4, y: -26, z: -180, s: 86 },
+  { t: 'cube', x: 5.55, y: 18, z: -420, s: 130 },
+];
+---
+
+<section class="work" style={`--n:${projects.length}`} aria-labelledby="work-t">
+  <span id="proyectos" class="anchor"></span>
+  <div class="stage">
+    <h2 id="work-t" class="sr">Proyectos selectos</h2>
+    <canvas class="room" aria-hidden="true"></canvas>
+
+    <div class="scene">
+      <div class="track">
+        {decos.map((d) => (
+          <div class="deco" data-x={d.x} data-y={d.y} data-z={d.z} style={`--s:${d.s}px`} aria-hidden="true">
+            <div class="spin">{[...Array(6)].map(() => <i />)}</div>
+          </div>
+        ))}
+        {projects.map((p, i) => (
+          <article class="card" style={`--tint:${p.tint}`} inert={i !== 0}>
+            <div class="scr">
+              {i === 0 && <span class="dot" aria-hidden="true"></span>}
+              <div class="device">
+                <div class={p.mgif ? 'glass m' : 'glass'}>{i === 0 && <span class="crt" aria-hidden="true"></span>}<div class="pic">
+                  {p.gif?.endsWith('.mp4')
+                    ? <video muted loop playsinline preload="metadata" aria-label={`${p.name} en uso`}>
+                        {p.mgif && <source src={p.mgif} type="video/mp4" media="(max-width: 900px), (max-aspect-ratio: 1/1)" />}
+                        <source src={p.gif} type="video/mp4" />
+                      </video>
+                    : p.others
+                    ? <ul class="others">{p.others.map((o) => <li>{o}</li>)}</ul>
+                    : p.shots
+                    ? <div class="bento">
+                        {p.shots.map((src) => <img src={src} alt={`${p.name}: escena del juego`} loading="lazy" decoding="async" />)}
+                        <div class="soon"><span class="mono">Próximamente</span></div>
+                      </div>
+                    : p.gif
+                    ? <img src={p.gif} alt={`${p.name} en uso`} loading="lazy" decoding="async" />
+                    : <div class="ph" aria-hidden="true"><i></i><span>{p.name}</span><span class="mono">GIF · próximamente</span></div>}
+                </div>
+                {p.gif?.endsWith('.mp4') && <button class="replay" type="button" aria-label="Repetir desde el inicio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /></svg></button>}
+                </div>
+              </div>
+            </div>
+            <div class="info">
+              <div class="ln"><p class="mono kind" style="--k:0">{p.kind}</p></div>
+              <div class="ln"><h3 style="--k:1">{p.name}</h3></div>
+              <div class="ln"><p class="sub" style="--k:2">{p.sub}</p></div>
+              <div class="ln"><p class="desc" style="--k:3">{p.desc}</p></div>
+              <div class="ln"><p class="foot" style="--k:4"><span class="mono">{p.meta}</span>{p.url && <a href={p.url} target="_blank" rel="noopener">{p.cta ?? 'Ver sitio ↗'}</a>}{p.mascot && <img class="mascot" src={p.mascot} alt="" loading="lazy" />}</p></div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const work = document.querySelector<HTMLElement>('.work')!;
+  const stage = work.querySelector<HTMLElement>('.stage')!;
+  const cards = [...work.querySelectorAll<HTMLElement>('.card')];
+  const decos = [...work.querySelectorAll<HTMLElement>('.deco')];
+    const n = cards.length;
+  // a capture always starts from its hero when its card comes into view, and stops when it leaves
+  const vid = (c: Element) => c.querySelector('video');
+  const play = (c: Element) => { const v = vid(c); if (v) { v.currentTime = 0; v.play().catch(() => {}); } };
+  const stop = (c: Element) => vid(c)?.pause();
+
+  // replay: back to the start of the capture, without waiting for the whole loop
+  work.addEventListener('click', (e) => {
+    const v = (e.target as Element).closest('.replay')?.parentElement?.querySelector('video');
+    if (v) { v.currentTime = 0; v.play(); }
+  });
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const clamp01 = (x: number) => Math.min(Math.max(x, 0), 1);
+  const ease = (x: number) => x * x * (3 - 2 * x);
+
+  // CRT power-on, scrubbed by scroll (so it runs backwards as a power-off when scrolling up):
+  // a: the point stretches into a line, b: the line opens into the screen, c: the picture warms up
+  const tv = (p: number) => {
+    const a = ease(clamp01(p / 0.3)), b = ease(clamp01((p - 0.26) / 0.44)), c = clamp01((p - 0.45) / 0.55);
+    const s = work.style;
+    s.setProperty('--ta', a.toFixed(4));
+    s.setProperty('--tb', b.toFixed(4));
+    s.setProperty('--tc', ease(c).toFixed(4));
+    s.setProperty('--tn', (b * (1 - ease(c))).toFixed(4)); // static, only while the screen is opening
+    s.setProperty('--roll', (c * 140 - 20).toFixed(1) + '%'); // the bright band that sweeps down once
+    work.classList.toggle('tv', p > 0.001 && p < 0.999);
+  };
+
+  // the curved track, like the previous site: cards turn and recede the farther they are from the center
+  let k = 0, kk = 0, pw = 0, pp = 0, raf = 0, open = false;
+  const place = () => {
+    kk += (k - kk) * (still ? 1 : 0.1);
+    pp += (pw - pp) * (still ? 1 : 0.14);
+    if (Math.abs(pw - pp) < 1e-3) pp = pw;
+    tv(pp);
+    room?.set(kk, ease(clamp01((pp - 0.2) / 0.8))); // the room lights up as the tube warms
+    const want = pp > (open ? 0.8 : 0.92);
+    if (want !== open) work.classList.toggle('open', (open = want));
+    const S = cards[0].offsetWidth + innerWidth * 0.14; // distance between projects
+    const vh = stage.offsetHeight / 100;
+    cards.forEach((c, i) => {
+      const d = i - kk, x = d * S, a = Math.abs(d);
+      c.style.transform = `translate(-50%, -50%) translate3d(${x}px, 0, ${-a * S * 0.17}px) rotateY(${-x / 175}deg)`;
+      c.style.setProperty('--a', Math.min(a, 1).toFixed(3));
+      c.style.setProperty('--d', Math.max(-1.5, Math.min(d, 1.5)).toFixed(3)); // parallax of the picture inside
+      const on = a <= 0.5 && open;
+      if (on !== !c.inert) on ? play(c) : stop(c);
+      c.inert = !on;
+    });
+    for (const o of decos) {
+      const x = (+o.dataset.x! - kk) * S;
+      o.style.transform = `translate3d(${x}px, ${+o.dataset.y! * vh}px, ${o.dataset.z}px)`;
+    }
+    raf = Math.abs(k - kk) > 1e-4 || pp !== pw ? requestAnimationFrame(place) : 0;
+  };
+
+  // track in svh from the top of this section, each step with its own room so a normal flick can't skip it:
+  // 0-160 the hero falls into the hole (under us), 150-162 the stage goes black (the hole can't leak through),
+  // 164-178 the point appears, 182-236 the TV turns on, hold, then from 300 one project every 70svh,
+  // each one resting a moment at the center
+  const onScroll = () => {
+    const v = -work.getBoundingClientRect().top / (stage.offsetHeight / 100);
+    stage.style.setProperty('--blk', clamp01((v - 150) / 12).toFixed(3));
+    // the room goes dark over the last 40svh before the stage unpins, so it meets the next section's black
+    const end = (work.offsetHeight - stage.offsetHeight) / (stage.offsetHeight / 100);
+    stage.style.setProperty('--out', clamp01((end - v) / 40).toFixed(3));
+    stage.style.setProperty('--dot', clamp01((v - 164) / 14).toFixed(3));
+    pw = clamp01((v - 182) / 54);
+    const r = Math.min(Math.max((v - 300) / 70, 0), n - 1), i = Math.floor(r);
+    k = i + ease(clamp01((r - i - 0.15) / 0.7));
+    if (!raf) raf = requestAnimationFrame(place);
+  };
+  // the room behind the cards (three.js), loaded after first paint and only drawn while this section is on screen
+  let room: { set(k: number, on: number): void; start(): void; stop(): void } | null = null;
+  import('../scripts/ambient').then(({ createAmbient }) => {
+    room = createAmbient(work.querySelector('.room')!, cards.map((c) => c.style.getPropertyValue('--tint').trim()));
+    if (!room) return;
+    room.set(kk, ease(clamp01((pp - 0.2) / 0.8)));
+    new IntersectionObserver(([e]) => (e.isIntersecting ? room!.start() : room!.stop())).observe(work);
+  }).catch(() => {});
+
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', () => { kk = k - 1; onScroll(); }); // force a re-place with the new sizes
+  onScroll();
+</script>
+
+<style>
+  /* starts 260svh before the hero ends, so it pins exactly when the fall begins and sits over it */
+  .work { position: relative; z-index: 1; margin-top: -260svh; height: calc((425 + var(--n) * 70) * 1svh); color: #f6e4c6; }
+  .anchor { position: absolute; top: 262svh; }
+  .stage { position: sticky; top: 0; height: 100svh; overflow: hidden; pointer-events: none; background: rgb(0 0 0 / var(--blk, 0)); }
+  .open .stage { pointer-events: auto; }
+
+  .room { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: calc(var(--blk, 0) * var(--out, 1)); }
+  .scene { position: absolute; inset: 0; perspective: 1400px; }
+  .track { position: absolute; left: 50%; top: 50%; transform-style: preserve-3d; }
+
+  /* ---------- project cards ---------- */
+  .card {
+    position: absolute; left: 0; top: 0;
+    display: grid; grid-template-columns: min(52vw, 820px) minmax(15rem, 20rem); align-items: center; gap: clamp(28px, 3.5vw, 60px);
+    will-change: transform;
+  }
+  .work:not(.open) .card:not(:first-of-type) { visibility: hidden; }
+  .scr { position: relative; display: grid; }
+  .device {
+    grid-area: 1 / 1;
+    padding: clamp(6px, .7vw, 10px); border-radius: 18px;
+    background: #0b0a09; border: 1px solid rgba(246, 228, 198, .14);
+    opacity: calc(1 - var(--a, 0) * .55);
+  }
+  /* first screen: a 3px line that widens (a), then opens top and bottom (b); the picture is washed out
+     and hot while the tube warms up (c) */
+  .card:first-of-type .device {
+    clip-path: inset(calc((1 - var(--tb, 0)) * (50% - 1.5px)) calc((1 - var(--ta, 0)) * 50%) round calc(2px + var(--tb, 0) * 16px));
+    filter: saturate(var(--tc, 0)) contrast(calc(1.6 - var(--tc, 0) * .6));
+  }
+  .work:not(.tv) .card:first-of-type .device { filter: none; }
+  .open:not(.tv) .card:first-of-type .device { clip-path: none; }
+  .crt { position: absolute; inset: 0; z-index: 3; pointer-events: none; display: none; }
+  .tv .crt { display: block; }
+  /* white-hot phosphor, fading as the picture comes in */
+  .crt { background: rgb(255 246 230 / calc(1 - var(--tc, 0))); }
+  /* static */
+  .crt::before {
+    content: ''; position: absolute; inset: -50%; opacity: calc(var(--tn, 0) * .9); mix-blend-mode: difference;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 2.2 -.6'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: static .3s steps(6) infinite;
+  }
+  @keyframes static { 0% { translate: 0 0; } 20% { translate: -7% 4%; } 40% { translate: 5% -9%; } 60% { translate: -3% 11%; } 80% { translate: 9% 2%; } }
+  /* scanlines and the roll bar sweeping down once */
+  .crt::after {
+    content: ''; position: absolute; inset: 0; opacity: calc(1 - var(--tc, 0) * .85);
+    background:
+      linear-gradient(to bottom, transparent calc(var(--roll) - 12%), rgb(255 255 255 / .35) var(--roll), transparent calc(var(--roll) + 4%)),
+      repeating-linear-gradient(to bottom, rgb(0 0 0 / .4) 0 1px, transparent 1px 3px);
+  }
+  /* glass: a soft reflection and the tube's darker corners, on every screen */
+  .glass::after {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit;
+    background:
+      linear-gradient(118deg, rgb(255 255 255 / .07), transparent 32%, transparent 70%, rgb(255 255 255 / .025)),
+      radial-gradient(ellipse 120% 100% at 50% 50%, transparent 62%, rgb(0 0 0 / .38));
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / .04), inset 0 0 40px rgb(0 0 0 / .45);
+  }
+  .glass { position: relative; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; background: #050505; }
+  /* the picture is wider than the screen and slides against the card's motion: parallax inside the glass */
+  .pic { position: absolute; inset: 0 -12%; translate: calc(var(--d, 0) * -8%) 0; }
+  .pic:has(img, video, .others) { inset: 0; translate: none; } /* real capture is already 16:10: show it whole */
+  .glass img, .glass video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* mini bento: big shot on the left, one on top right, then a shot and the "coming soon" cell */
+  .bento { height: 100%; display: grid; grid-template: 1fr 1fr / 1.35fr 1fr 1fr; gap: 6px; padding: 6px; }
+  .bento img { border-radius: 6px; min-height: 0; }
+  .bento img:first-child { grid-row: span 2; }
+  .bento img:nth-child(2) { grid-column: span 2; }
+  .soon {
+    display: grid; place-items: center; border-radius: 6px; text-align: center; padding: 8px;
+    border: 1px dashed color-mix(in srgb, var(--tint) 60%, transparent);
+    background: color-mix(in srgb, var(--tint) 14%, #050505); color: var(--tint);
+  }
+  /* catch-all card: a numbered list of names on the screen */
+  .others {
+    height: 100%; margin: 0; padding: 6% 8%; list-style: none; display: grid; align-content: center; gap: .2em;
+    font-size: clamp(18px, 2.3vw, 38px); font-weight: 600; letter-spacing: -.03em;
+  }
+  .others li { border-bottom: 1px solid rgba(246, 228, 198, .12); padding-bottom: .2em; }
+  .replay {
+    position: absolute; right: 12px; bottom: 12px; width: 40px; height: 40px; display: grid; place-items: center;
+    border: 1px solid rgba(246, 228, 198, .25); border-radius: 50%; background: rgba(5, 5, 5, .6); color: #f6e4c6;
+    backdrop-filter: blur(6px); cursor: pointer; transition: background .3s, rotate .5s; z-index: 4;
+  }
+  .replay:hover, .replay:focus-visible { background: rgba(5, 5, 5, .85); rotate: -90deg; }
+  .replay svg { width: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  /* flat placeholder: dark screen, one solid planet of the project's color, the name */
+  .ph { position: relative; height: 100%; display: grid; place-content: center; justify-items: center; gap: 10px; overflow: hidden; }
+  .ph i { position: absolute; width: 70%; aspect-ratio: 1; left: 15%; top: 72%; border-radius: 50%; background: var(--tint); opacity: .22; }
+  .ph i::after { content: ''; position: absolute; inset: -6%; border-radius: 50%; border: 1px solid var(--tint); opacity: .8; }
+  .ph span:first-of-type { position: relative; font-size: clamp(30px, 4.4vw, 72px); font-weight: 700; letter-spacing: -.04em; }
+  .ph .mono { position: relative; }
+
+  /* the point of light left in the dark after the fall; it breathes until the screen turns on */
+  /* then it becomes the glow of the tube: it stretches with the line and the screen, and fades as it warms */
+  .dot {
+    grid-area: 1 / 1; place-self: center; z-index: 1; pointer-events: none;
+    width: calc(6px + var(--ta, 0) * (100% - 6px));
+    height: calc(6px - var(--ta, 0) * 3px + var(--tb, 0) * (100% - 3px));
+    border-radius: calc(3px + var(--tb, 0) * 15px);
+    background: rgb(255 244 224 / calc(1 - var(--tb, 0)));
+    box-shadow: 0 0 12px 3px rgba(255, 214, 160, .9), 0 0 60px 12px rgba(255, 150, 60, .35), 0 0 calc(var(--ta, 0) * 160px) calc(var(--ta, 0) * 30px) rgba(255, 200, 140, .3);
+    opacity: calc(var(--dot, 0) * (1 - var(--tc, 0)));
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  .tv .dot, .open .dot { animation: none; }
+  .open:not(.tv) .dot { display: none; }
+  @keyframes pulse { 50% { scale: 1.8; } }
+
+  /* text: lines rise out of their masks when the screen turns on; side cards' text fades away */
+  .info { display: grid; gap: 10px; opacity: calc(1 - var(--a, 0)); }
+  .ln { overflow: hidden; padding-bottom: .12em; margin-bottom: -.12em; }
+  .ln > * { translate: 0 110%; transition: translate .6s cubic-bezier(.7, 0, .84, 0); }
+  .open .ln > * { translate: 0; transition: translate 1s cubic-bezier(.16, 1, .3, 1) calc(.1s + var(--k) * 80ms); }
+  .kind { color: inherit; }
+  h3 { font-size: clamp(34px, 3.4vw, 56px); font-weight: 600; line-height: 1; letter-spacing: -.04em; }
+  .sub { font-size: 15px; font-weight: 500; }
+  .desc { font-size: 14px; line-height: 1.65; max-width: 40ch; opacity: .75; }
+  .foot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; padding-top: 14px; border-top: 1px solid rgba(246, 228, 198, .2); }
+  .foot .mono { color: inherit; opacity: .7; letter-spacing: .15em; }
+  .foot a { color: inherit; font-size: 13px; font-weight: 600; text-decoration: none; padding-bottom: 2px; border-bottom: 1px solid transparent; transition: border-color .3s; }
+  .mascot { width: 72px; height: 64px; object-fit: contain; margin: -14px 0 -10px auto; align-self: center; animation: bob 3s ease-in-out infinite; }
+  @keyframes bob { 50% { translate: 0 -5px; rotate: 4deg; } }
+  .foot a:hover, .foot a:focus-visible { border-color: currentColor; }
+
+  /* ---------- floating wireframe cubes (pure CSS 3D, hairlines) ---------- */
+  .deco, .deco .spin { position: absolute; transform-style: preserve-3d; }
+  .deco { left: 0; top: 0; width: var(--s); height: var(--s); margin: calc(var(--s) / -2); }
+  .deco i { position: absolute; display: block; opacity: 0; transition: opacity 2s .6s; }
+  .open .deco i { opacity: 1; }
+  .spin { inset: 0; animation: tumble 38s linear infinite; }
+  @keyframes tumble { to { transform: rotateX(360deg) rotateY(720deg); } }
+
+  .cube i { inset: 0; border: 1px solid rgba(246, 228, 198, .5); background: rgba(5, 5, 5, .55); }
+  .cube i:nth-child(1) { transform: translateZ(calc(var(--s) / 2)); }
+  .cube i:nth-child(2) { transform: rotateY(180deg) translateZ(calc(var(--s) / 2)); }
+  .cube i:nth-child(3) { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); }
+  .cube i:nth-child(4) { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); }
+  .cube i:nth-child(5) { transform: rotateX(90deg) translateZ(calc(var(--s) / 2)); }
+  .cube i:nth-child(6) { transform: rotateX(-90deg) translateZ(calc(var(--s) / 2)); }
+
+
+  /* phone / portrait: screen on top, text under it */
+  @media (max-width: 900px), (max-aspect-ratio: 1/1) {
+    .card { grid-template-columns: calc(100vw - 32px); gap: 24px; }
+    .device { border-radius: 14px; }
+    .glass { border-radius: 8px; }
+    .glass.m { aspect-ratio: 4 / 5; max-height: 56svh; margin-inline: auto; }
+    h3 { font-size: 32px; }
+    .desc { font-size: 13px; }
+    .sub { font-size: 14px; }
+  }
+
+  /* no motion: no fall to overlap, the screen is simply on */
+  @media (prefers-reduced-motion: reduce) {
+    .work { margin-top: 0; }
+    .card:first-of-type .device { clip-path: none; filter: none; }
+    .dot, .crt { display: none; }
+    .ln > * { transition: none; }
+    .mascot { animation: none; }
+  }
+</style>

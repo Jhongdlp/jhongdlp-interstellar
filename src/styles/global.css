@@ -1,0 +1,23 @@
+:root {
+  --ink: #f3d9b1;
+  --dim: rgba(243, 217, 177, .55);
+  --bg: #000;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: var(--bg); color: var(--ink); scroll-behavior: smooth; }
+body { min-height: 100svh; font-family: var(--font-sans); }
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 300;
+  font-size: 10px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; }
+}

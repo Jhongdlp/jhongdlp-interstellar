@@ -1,0 +1,26 @@
+---
+import { Font } from 'astro:assets';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#000000" />
+    <title>{title}</title>
+    <Font cssVariable="--font-sans" preload={[{ weight: 500 }, { weight: 600 }]} />
+    <Font cssVariable="--font-mono" preload={[{ weight: 300 }]} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

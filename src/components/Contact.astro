@@ -1,0 +1,358 @@
+---
+// Last scene: Murph's room. Typing writes binary into falling dust; sending lifts it into one point of light.
+const title = ['Hablemos', 'de tu', 'proyecto.'];
+const EMAIL = 'hello@jhongdlp.com';
+---
+
+<section id="contacto" class="contact" aria-labelledby="contacto-t">
+  <canvas aria-hidden="true"></canvas>
+  <div class="beam" aria-hidden="true"></div>
+
+  <div class="intro">
+    <h2 id="contacto-t">{title.map((w, i) => <span class="w"><span style={`--i:${i}`}>{w}</span></span>)}</h2>
+    <p class="lead">¿Tienes un proyecto, una colaboración o una pregunta? Escríbeme y te respondo pronto.</p>
+    <!-- copies the address; if the clipboard is blocked it opens the mail app instead -->
+    <button type="button" class="copy" data-email={EMAIL} aria-label={`Copiar ${EMAIL}`}>
+      <span class="mail">{EMAIL}</span>
+      <span class="hint" aria-hidden="true">
+        <svg class="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15V6.5A1.5 1.5 0 0 1 6.5 5H15" /></svg>
+        <svg class="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+        <span class="t">Copiar</span>
+      </span>
+    </button>
+    <p class="sr" role="status" aria-live="polite"></p>
+  </div>
+
+  <form class="card" novalidate>
+    <label class="field">
+      <span class="mono">Nombre</span>
+      <input name="name" type="text" autocomplete="name" required maxlength="100" placeholder="Tu nombre" />
+    </label>
+    <label class="field">
+      <span class="mono">Email</span>
+      <input name="email" type="email" autocomplete="email" required maxlength="200" placeholder="tu@correo.com" />
+    </label>
+    <label class="field">
+      <span class="mono">Mensaje</span>
+      <textarea name="message" rows="2" required maxlength="5000" placeholder="Cuéntame qué necesitas…"></textarea>
+    </label>
+    <!-- bots fill every field; people never see this one -->
+    <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+    <button type="submit">
+      <span class="label">Enviar mensaje</span>
+      <!-- two arrows: on hover the first flies out right, the second slides in from the left -->
+      <span class="arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </span>
+    </button>
+    <p class="status" role="status" aria-live="polite"></p>
+  </form>
+</section>
+
+<script>
+  import { BITS } from '../scripts/signal';
+
+  const root = document.querySelector<HTMLElement>('.contact')!;
+  const form = root.querySelector<HTMLFormElement>('form')!;
+  const status = root.querySelector<HTMLElement>('.status')!;
+  const button = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+  const label = button.querySelector<HTMLElement>('.label')!;
+  let signal: ReturnType<typeof import('../scripts/signal').createSignal> = null;
+
+  // last 4 characters of the field being typed -> 32 bits, one floor band each
+  const show = (text: string) => {
+    const out = new Array(BITS).fill(0);
+    [...text].slice(-BITS / 8).forEach((c, i) => {
+      for (let k = 0; k < 8; k++) out[i * 8 + k] = (c.charCodeAt(0) >> (7 - k)) & 1;
+    });
+    signal?.write(out);
+  };
+  form.addEventListener('input', (e) => show((e.target as HTMLInputElement).value ?? ''));
+
+  const copy = root.querySelector<HTMLButtonElement>('.copy')!;
+  let copied = 0;
+  copy.addEventListener('click', async () => {
+    const email = copy.dataset.email!;
+    try { await navigator.clipboard.writeText(email); } catch { location.href = `mailto:${email}`; return; }
+    copy.classList.add('done');
+    copy.querySelector('.t')!.textContent = 'Copiado';
+    root.querySelector('.sr')!.textContent = 'Email copiado';
+    clearTimeout(copied);
+    copied = setTimeout(() => {
+      copy.classList.remove('done');
+      copy.querySelector('.t')!.textContent = 'Copiar';
+      root.querySelector('.sr')!.textContent = '';
+    }, 2000);
+  });
+
+  const say = (msg: string, kind = '') => { status.textContent = msg; status.dataset.kind = kind; };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    if (data.company) return; // honeypot
+    if (!form.checkValidity()) {
+      form.querySelector<HTMLElement>(':invalid')?.focus();
+      return say('Faltan datos: nombre, un email válido y tu mensaje.', 'err');
+    }
+    form.classList.add('busy');
+    button.disabled = true;
+    label.textContent = 'Enviando…';
+    say('');
+    signal?.send(1);
+    const wait = new Promise((r) => setTimeout(r, 2600)); // let the dust leave before the answer lands
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: data.name, email: data.email, message: data.message }),
+      });
+      await wait;
+      if (!res.ok) throw new Error();
+      form.reset();
+      show('');
+      say('Mensaje enviado. Te respondo pronto.', 'ok');
+    } catch {
+      await wait;
+      say('No se pudo enviar. Escríbeme a hello@jhongdlp.com.', 'err');
+    } finally {
+      form.classList.remove('busy');
+      button.disabled = false;
+      label.textContent = 'Enviar mensaje';
+      setTimeout(() => signal?.send(0), 1800);
+    }
+  });
+
+  // title rises in once the section is on screen
+  new IntersectionObserver(([e]) => e.isIntersecting && root.classList.add('on'), { threshold: 0.3 }).observe(root);
+
+  // load three.js on approach, render only while visible
+  const canvas = root.querySelector('canvas')!;
+  let seen = false;
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; seen ? signal?.start() : signal?.stop(); }).observe(root);
+  const load = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    load.disconnect();
+    import('../scripts/signal').then(({ createSignal }) => {
+      signal = createSignal(canvas);
+      if (seen) signal?.start();
+      root.classList.add('ready');
+    });
+  }, { rootMargin: '100% 0px' });
+  load.observe(root);
+</script>
+
+<style>
+  /* exactly one screen: everything scales with the viewport height so nothing spills */
+  .contact {
+    position: relative;
+    height: 100svh;
+    min-height: 560px;
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 27rem);
+    align-items: center;
+    gap: clamp(24px, 5vw, 96px);
+    padding: clamp(80px, 12svh, 120px) clamp(16px, 6vw, 110px) clamp(24px, 6svh, 56px);
+    overflow: hidden;
+    /* starts on the gallery's umber (--room) so the cut between sections disappears;
+       a pool of window light on the floor where the beam lands, a warm back wall fading into the dark */
+    background:
+      radial-gradient(ellipse 22% 7% at 56% 97%, rgba(255, 186, 110, .22), transparent 70%),
+      radial-gradient(ellipse 45% 18% at 56% 98%, rgba(255, 150, 70, .1), transparent 70%),
+      radial-gradient(ellipse 80% 50% at 50% 100%, #1f150c, transparent 70%),
+      radial-gradient(ellipse 60% 45% at 28% 20%, rgba(70, 48, 28, .35), transparent 70%),
+      linear-gradient(#140f0b, #0a0705 55%, #050302);
+    color: #f6e4c6;
+    /* the whole room (dust, beam, grain) sinks into black at the bottom, where the footer's space begins */
+    mask-image: linear-gradient(#000 calc(100% - 14svh), transparent);
+  }
+  /* screen blend: the renderer's black clears to nothing, so the room's background shows through.
+     The dust also fades in from the top so nothing sits on the seam with the gallery. */
+  canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 2s;
+    mix-blend-mode: screen; mask-image: linear-gradient(transparent, #000 30%);
+  }
+  .ready canvas { opacity: 1; }
+  .intro, .card { position: relative; z-index: 1; }
+
+  /* sunbeam through the window; same polygon as the shader's beam so the dust glints inside it.
+     Blur on the parent, clip on the children (filter runs before clip-path, so it can't share an element). */
+  .beam { position: absolute; inset: 0; pointer-events: none; filter: blur(22px); mix-blend-mode: screen; animation: breathe 14s ease-in-out infinite; }
+  .beam::before, .beam::after { content: ''; position: absolute; inset: 0; }
+  .beam::before {
+    clip-path: polygon(22% 0, 36% 0, 70% 100%, 42% 100%);
+    background: linear-gradient(rgba(255, 210, 150, .16), rgba(255, 180, 110, .07) 75%, rgba(255, 170, 90, .12));
+  }
+  .beam::after {   /* brighter core, like light through a narrower gap in the curtain */
+    clip-path: polygon(27% 0, 31% 0, 60% 100%, 51% 100%);
+    background: linear-gradient(rgba(255, 225, 175, .14), rgba(255, 190, 120, .04) 80%);
+  }
+  /* clouds passing over the sun */
+  @keyframes breathe { 0%, 100% { opacity: 1; } 40% { opacity: .7; } 55% { opacity: .85; } }
+
+  /* above dust and beam, below the copy: grain (realism), vignette (readability), top fade (seam) */
+  .contact::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 .92 0 0 0 0 .8 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse 75% 65% at 50% 60%, transparent 40%, rgba(0, 0, 0, .65)),
+      linear-gradient(#140f0b, rgba(20, 15, 11, .7) 8%, transparent 30%);
+  }
+
+  /* ---------- intro ---------- */
+  .intro { display: grid; gap: clamp(14px, 2.6svh, 24px); }
+  h2 {
+    font-weight: 300;
+    font-size: clamp(44px, min(8.5vw, 15svh), 140px);
+    line-height: .88;
+    letter-spacing: -.05em;
+    text-shadow: 0 2px 40px rgba(0, 0, 0, .7);
+  }
+  h2 .w:last-child { font-weight: 600; display: block; }
+  .w { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 .08em .1em 0; margin-right: .2em; }
+  .w > span { display: inline-block; translate: 0 110%; transition: translate 1.2s cubic-bezier(.16, 1, .3, 1) calc(var(--i) * 90ms); }
+  .on .w > span { translate: 0; }
+  .lead { max-width: 36ch; font-size: clamp(15px, 1.1vw, 17px); line-height: 1.55; color: #e9d3b0; text-shadow: 0 1px 20px #000; }
+
+  /* copy email: a quiet pill under the lead; the icon flips to a check when copied */
+  .copy {
+    justify-self: start; display: inline-flex; align-items: center; gap: 14px;
+    padding: 8px 8px 8px 18px;
+    font: 500 clamp(15px, 1.15vw, 18px) / 1 var(--font-sans); color: #fff4e2;
+    background: rgba(243, 217, 177, .06);
+    border: 1px solid rgba(243, 217, 177, .16); border-radius: 999px;
+    backdrop-filter: blur(10px);
+    cursor: pointer; transition: border-color .3s, background .3s;
+  }
+  .copy:hover, .copy:focus-visible { border-color: rgba(255, 154, 60, .6); background: rgba(255, 154, 60, .08); }
+  .copy:focus-visible { outline: 2px solid #ffd29a; outline-offset: 3px; }
+  .copy .hint {
+    position: relative; display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px 8px 30px; border-radius: 999px;
+    font: 600 11px / 1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase;
+    color: #140d06; background: #f3d9b1; transition: background .3s;
+  }
+  .copy svg {
+    position: absolute; left: 10px; width: 15px; height: 15px;
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    transition: scale .35s cubic-bezier(.34, 1.56, .64, 1), opacity .2s;
+  }
+  .copy .i-ok { scale: 0; opacity: 0; }
+  .copy.done .hint { background: #ff9a3c; }
+  .copy.done .i-copy { scale: 0; opacity: 0; }
+  .copy.done .i-ok { scale: 1; opacity: 1; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+  /* ---------- card: soft frosted glass, rounded, a lit top edge ---------- */
+  .card {
+    display: grid;
+    gap: clamp(12px, 2svh, 18px);
+    padding: clamp(20px, 3.4svh, 32px);
+    border: 1px solid rgba(243, 217, 177, .14);
+    border-radius: 24px;
+    background: linear-gradient(160deg, rgba(36, 26, 18, .78), rgba(14, 10, 7, .86));
+    backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: inset 0 1px 0 rgba(255, 230, 190, .12), 0 30px 80px -20px rgba(0, 0, 0, .8);
+  }
+  .field { display: grid; gap: 8px; }
+  .field .mono { color: #e9d3b0; transition: color .3s; }
+  .field:focus-within .mono { color: #ff9a3c; }
+  input, textarea {
+    width: 100%;
+    padding: 12px 16px;
+    font: 500 16px / 1.4 var(--font-sans);
+    color: #fff4e2;
+    background: rgba(243, 217, 177, .05);
+    border: 1px solid rgba(243, 217, 177, .14);
+    border-radius: 14px;
+    outline: none;
+    resize: none;
+    caret-color: #ff9a3c;
+    transition: border-color .3s, background .3s, box-shadow .3s;
+  }
+  input::placeholder, textarea::placeholder { color: rgba(243, 217, 177, .35); }
+  input:hover, textarea:hover { border-color: rgba(243, 217, 177, .28); }
+  input:focus, textarea:focus { border-color: #ff9a3c; background: rgba(255, 154, 60, .06); box-shadow: 0 0 0 4px rgba(255, 154, 60, .14); }
+  textarea { field-sizing: content; min-height: calc(2lh + 24px); max-height: calc(5lh + 24px); }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+  /* pill button: label left, arrow in a dark chip right; a sheen sweeps across on hover */
+  .card button {
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 4px;
+    padding: 6px 6px 6px 24px;
+    font: 600 13px / 1 var(--font-sans);
+    letter-spacing: .08em; text-transform: uppercase;
+    color: #140d06;
+    background: #ff9a3c;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 10px 30px -10px rgba(255, 154, 60, .6);
+    transition: background .3s, box-shadow .3s, translate .3s;
+  }
+  .card button::before {
+    content: ''; position: absolute; inset: 0; translate: -110% 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .45), transparent 70%);
+    transition: translate .8s cubic-bezier(.16, 1, .3, 1);
+  }
+  .card button:hover, .card button:focus-visible { background: #ffb366; box-shadow: 0 14px 36px -10px rgba(255, 154, 60, .8); translate: 0 -1px; }
+  .card button:hover::before { translate: 110% 0; }
+  .card button:active { translate: 0 1px; }
+  .card button:focus-visible { outline: 2px solid #ffd29a; outline-offset: 3px; }
+
+  .arrow {
+    position: relative; overflow: hidden; flex: none;
+    width: 42px; height: 42px; border-radius: 50%;
+    background: #140d06; color: #ff9a3c;
+  }
+  .arrow svg {
+    position: absolute; inset: 0; margin: auto; width: 18px; height: 18px;
+    fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+    transition: translate .5s cubic-bezier(.16, 1, .3, 1);
+  }
+  .arrow svg + svg { translate: -200% 0; }
+  .card button:hover .arrow svg, .card button:focus-visible .arrow svg { translate: 200% 0; }
+  .card button:hover .arrow svg + svg, .card button:focus-visible .arrow svg + svg { translate: 0; }
+  /* sending: arrows keep flying out, one after the other */
+  .busy.card button { cursor: progress; background: #ffd29a; }
+  .busy .arrow svg { animation: fly 1s cubic-bezier(.6, 0, .4, 1) infinite; }
+  .busy .arrow svg + svg { animation-delay: .5s; }
+  @keyframes fly { from { translate: -200% 0; } to { translate: 200% 0; } }
+
+  .field { transition: opacity .8s; }
+  .busy .field { opacity: .35; }
+
+  .status { min-height: 1.4em; margin-top: -4px; font-size: 13px; }
+  .status:empty { display: none; }
+  .status[data-kind='ok'] { color: #ffd29a; }
+  .status[data-kind='err'] { color: #ff8a6a; }
+
+  /* tablet / phone: stacked, title shrinks, steps go (the lead already explains), clears the bottom nav */
+  @media (max-width: 860px) {
+    .contact {
+      grid-template-columns: 1fr;
+      align-content: center;
+      gap: clamp(16px, 3svh, 28px);
+      min-height: 640px;
+      padding-top: clamp(72px, 10svh, 96px);
+      padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+    h2 { font-size: clamp(38px, min(11vw, 8svh), 72px); }
+    h2 .w:last-child { display: inline-block; }
+    .lead { font-size: 14px; }
+    .copy { font-size: 14px; }
+    .card { padding: 18px; gap: 10px; border-radius: 20px; }
+    input, textarea { padding: 10px 14px; }
+    textarea { min-height: calc(2lh + 20px); max-height: calc(3lh + 20px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .w > span { translate: 0; transition: none; }
+    .beam { animation: none; }
+    .arrow svg, .card button::before { transition: none; }
+    .busy .arrow svg { animation: none; }
+  }
+</style>

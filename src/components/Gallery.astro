@@ -1,0 +1,228 @@
+---
+// After the projects: a line of light cuts the black and opens like an old TV switching on.
+// The bento repeats that gesture: each tile turns on from its own line, one after another.
+// Grid gaps are 1px hairlines, so the whole bento reads as one panel cut into pieces.
+// Behind it, through the same slit, the background turns from the projects' black to a warm umber
+// and a three.js tesseract (strands of light on every axis) takes the camera in.
+const tiles: { alt: string; area: string; src: string; pos?: string }[] = [
+  { alt: 'Ponencia — TICEC, CEDIA 2024', area: 'a', src: '/gallery/ponencia.webp', pos: '30% 45%' },
+  { alt: 'Paper — Revista Tecnológica ESPOL', area: 'b', src: '/gallery/paper.webp', pos: '50% 18%' },
+  { alt: 'Oficina', area: 'c', src: '/gallery/oficina.webp', pos: '55% 30%' },
+  { alt: 'CEDIA — Parque Tecnológico Indoamérica', area: 'd', src: '/gallery/cedia.webp', pos: '50% 62%' },
+  { alt: 'Presentación de la estrategia de uso de IA para Ecuador — MINTEL', area: 'g', src: '/gallery/estrategia-ia.webp', pos: '76% 55%' },
+];
+
+// commit history, read from the public contributions page at build time (no token).
+// If GitHub is down or changes its HTML, the tile just shows an empty calendar frame.
+const USER = 'jhongdlp';
+
+// ITU Generation Connect envoy. UN/ITU marks (Wikimedia Commons, single-color) are used as CSS masks
+// so they take the tile's palette. Their use is restricted: confirm with ITU that envoys may show them.
+const ENVOY_URL = 'https://www.itu.int/generationconnect/generation-connect-americas-youth-envoys-gc-ams-2026-2030/';
+const html = await fetch(`https://github.com/users/${USER}/contributions`).then((r) => (r.ok ? r.text() : '')).catch(() => '');
+const days = [...html.matchAll(/data-date="([\d-]+)" id="contribution-day-component-(\d)-(\d+)" data-level="(\d)"/g)]
+  .map(([, date, d, w, l]) => ({ date, d: +d, w: +w, l: +l }));
+const weeks = Math.max(1, ...days.map((x) => x.w + 1));
+const total = html.match(/([\d,]+)\s+contributions\s+in the last year/)?.[1];
+
+---
+
+<section class="gallery" aria-label="Galería">
+  <div class="stage">
+    <div class="line" aria-hidden="true"></div>
+    <div class="room" aria-hidden="true"><canvas></canvas></div>
+    <div class="bento">
+      {tiles.map((t, i) => (
+        <figure class="tile" style={`grid-area:${t.area};--i:${i + 1}`}>
+          <img src={t.src} alt={t.alt} loading="lazy" decoding="async" style={t.pos && `object-position:${t.pos}`} />
+          <figcaption>{t.alt}</figcaption>
+        </figure>
+      ))}
+      <a class="tile envoy" style="grid-area:e;--i:0" href={ENVOY_URL} target="_blank" rel="noopener">
+        <i class="edge" aria-hidden="true"></i>
+        <i class="seal" aria-hidden="true"></i>
+        <div class="top">
+          <i class="mark itu" role="img" aria-label="Unión Internacional de Telecomunicaciones"></i>
+          <i class="rule" aria-hidden="true"></i>
+          <i class="mark un" role="img" aria-label="Naciones Unidas"></i>
+          <span>Generation<br />Connect</span>
+        </div>
+        <div class="body">
+          <h3>Americas <em>Youth Envoy</em></h3>
+          <p class="meta"><span class="org">UIT · Naciones Unidas</span><span>Ecuador</span><span class="cta">itu.int ↗</span></p>
+        </div>
+      </a>
+      <a class="tile commits" style="grid-area:f;--i:6" href={`https://github.com/${USER}`} target="_blank" rel="noopener">
+        <div class="cal" style={`--weeks:${weeks}`} role="img" aria-label={`Calendario de commits de ${USER}${total ? `: ${total} contribuciones en el último año` : ''}`}>
+          {days.map((x) => <i style={`grid-area:${x.d + 1}/${x.w + 1};--l:${x.l};--x:${(x.w / weeks).toFixed(3)}`} title={x.date} />)}
+        </div>
+        <p>{total && <b>{total}</b>} commits · último año <span>github/{USER}</span></p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+  const gallery = document.querySelector<HTMLElement>('.gallery')!;
+  const stage = gallery.querySelector<HTMLElement>('.stage')!;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // --p (0..1 over the section) drives the whole transition in CSS
+  const tick = () => {
+    const u = still ? 1 : -gallery.getBoundingClientRect().top / Math.max(gallery.offsetHeight - stage.offsetHeight, 1);
+    const p = Math.min(Math.max(u, 0), 1);
+    stage.style.setProperty('--p', String(p));
+    tess?.progress(p);
+  };
+  addEventListener('scroll', tick, { passive: true });
+
+  // three.js loads a screen and a half early; renders only while on screen
+  const canvas = stage.querySelector('canvas')!;
+  let tess: ReturnType<typeof import('../scripts/tesseract').createTesseract> = null, seen = false;
+  new IntersectionObserver(([e]) => { seen = e.isIntersecting; seen ? tess?.start() : tess?.stop(); }).observe(gallery);
+  const load = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    load.disconnect();
+    import('../scripts/tesseract').then(({ createTesseract }) => {
+      tess = createTesseract(canvas);
+      tick();
+      if (seen) tess?.start();
+    });
+  }, { rootMargin: '150% 0px' });
+  load.observe(gallery);
+  tick();
+</script>
+
+<style>
+  .gallery { --room: #140f0b; position: relative; height: 340svh; background: #000; }
+  .stage {
+    --w: clamp(0, var(--p, 0) / .12, 1);                 /* screen line draws across */
+    --o: clamp(0, (var(--p, 0) - .1) / .14, 1);          /* it opens into the grid's hairlines */
+    position: sticky; top: 0; height: 100svh; overflow: hidden;
+    display: grid; padding: 11svh 11vw;                    /* bento = 78% of the screen, like the 3D cell's front frame */
+  }
+  .stage > .bento { grid-area: 1 / 1; }
+
+  /* the new room: opens with the slit; freshly opened it still glows with the line's light, then cools */
+  .room {
+    position: absolute; inset: 0;
+    background: color-mix(in oklab, var(--ink) calc((1 - var(--o)) * 22%), var(--room));
+    clip-path: inset(calc((1 - var(--o)) * 50%) 0);
+  }
+  /* --f: the last stretch of scroll dims the tesseract's lower edge so the room ends in plain umber, like the contact's top */
+  .stage { --f: clamp(0, (var(--p, 0) - .8) / .2, 1); }
+  canvas { width: 100%; height: 100%; display: block; mix-blend-mode: screen; filter: blur(3px); opacity: .7;
+    mask-image: linear-gradient(#000 calc(100% - var(--f) * 55%), transparent); } /* black clears to nothing: only the light adds onto the room */
+
+  .line {
+    position: absolute; left: 0; right: 0; top: 50%; height: 1px; z-index: 2;
+    background: var(--ink); box-shadow: 0 0 14px 1px rgba(243, 217, 177, .6);
+    scale: var(--w) 1; opacity: calc(1 - var(--o));
+  }
+
+  /* 1px gaps over a hairline-colored back = the grid lines; opens vertically from the screen line */
+  .bento {
+    display: grid; gap: 1px; padding: 1px; min-height: 0;
+    background: rgba(243, 217, 177, .22);
+    grid-template: 1fr 1fr 1.4fr / 1.2fr 1fr .8fr 1fr .85fr;
+    grid-template-areas: 'a a b c g' 'a a d c g' 'e e e f f';
+    clip-path: inset(calc((1 - var(--o)) * 50%) 0);
+  }
+
+  /* each tile switches on like a CRT: a bright line across its middle, then the picture opens from it */
+  .tile {
+    --s: clamp(0, (var(--p, 0) - .26 - var(--i) * .055) / .05, 1);
+    --t: clamp(0, (var(--p, 0) - .3 - var(--i) * .055) / .1, 1);
+    position: relative; margin: 0; min-height: 0; overflow: hidden; background: var(--room);
+  }
+  .tile::after {
+    content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; pointer-events: none;
+    background: var(--ink); box-shadow: 0 0 10px rgba(243, 217, 177, .7);
+    scale: var(--s) 1; opacity: calc(1 - var(--t));
+  }
+  .tile > :not(figcaption) { clip-path: inset(calc((1 - var(--t)) * 50%) 0); }
+
+  .tile img {
+    width: 100%; height: 100%; display: block; object-fit: cover;
+    transition: scale 1s cubic-bezier(.2, .7, .2, 1);
+  }
+  .tile:hover img { scale: 1.04; }
+
+  /* envoy: the protagonist. The UN emblem set huge and cropped as a light-drawn seal,
+     an ITU · UN lockup on top, the title set large. Logos are masks, so they wear the tile's colors. */
+  .envoy.envoy { --cyan: #5cc8f0; background: radial-gradient(120% 140% at 85% 50%, #12385a, #0a2036 60%, #071726); }
+  .envoy {
+    container-type: size;                                         /* everything scales with the tile, so it always fits */
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: clamp(14px, 6cqh, 28px) clamp(16px, 3cqi, 32px); color: var(--ink); text-decoration: none;
+  }
+  .mark { display: block; background: currentColor; mask: var(--src) center / contain no-repeat; }
+  .itu { --src: url(/gallery/itu.svg); height: clamp(26px, 20cqh, 48px); aspect-ratio: 170 / 200; color: var(--cyan); }
+  .un { --src: url(/gallery/un.svg); height: clamp(20px, 15cqh, 36px); aspect-ratio: 470 / 400; color: var(--ink); }
+  .seal {
+    --src: url(/gallery/un.svg); position: absolute; right: -12%; top: 50%; height: 135%; aspect-ratio: 470 / 400; translate: 0 -50%;
+    background: rgba(92, 200, 240, .2);
+    mask: var(--src) center / contain no-repeat;
+    transition: scale 1.4s cubic-bezier(.2, .7, .2, 1), opacity .8s; opacity: .85;
+  }
+  .envoy:hover .seal { scale: 1.04; opacity: 1; }
+
+  .envoy .top { position: relative; display: flex; gap: clamp(12px, 1.2vw, 18px); align-items: center; font: 300 10px / 1.4 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(243, 217, 177, .65); }
+  .envoy .rule { width: 1px; align-self: stretch; background: rgba(243, 217, 177, .25); }
+  .envoy .top span { margin-left: 4px; }
+  /* a comet of cyan light runs the tile's border, pulling the eye */
+  @property --a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+  .envoy .edge {
+    position: absolute; inset: 0; padding: 1px; pointer-events: none; z-index: 1;
+    background: conic-gradient(from var(--a), transparent 0 72%, rgba(92, 200, 240, .9) 88%, transparent 92%);
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    animation: orbit 7s linear infinite;
+  }
+  @keyframes orbit { to { --a: 360deg; } }
+  .envoy::after { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); } /* its switch-on line is cyan too */
+  .envoy .body { position: relative; }
+  /* one line, sized by the tile's width and height, whichever is tighter */
+  .envoy h3 { margin: 0 0 clamp(8px, 5cqh, 16px); font: 200 min(8.6cqi, 22cqh) / 1 var(--font-sans); letter-spacing: -.035em; white-space: nowrap; color: var(--ink); }
+  .envoy h3 em { font-style: normal; color: var(--cyan); }
+  .envoy .meta {
+    margin: 0; display: flex; gap: clamp(12px, 2.4cqi, 28px); padding-top: clamp(6px, 4cqh, 12px);
+    border-top: 1px solid rgba(243, 217, 177, .18);
+    font: 300 10px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(243, 217, 177, .6);
+  }
+  .envoy .meta .org { font-weight: 600; color: var(--ink); }
+  .envoy .meta span + span::before { content: '·'; margin-right: clamp(12px, 2.4cqi, 28px); opacity: .5; }
+  .envoy .meta span + span.cta::before { content: none; }
+  @container (max-width: 480px) { .envoy .meta span:first-child { display: none; } .envoy .meta .org + span::before { display: none; } }
+  .envoy .cta {
+    margin-left: auto; padding-bottom: 3px; font-weight: 600; color: var(--cyan);
+    background: linear-gradient(var(--cyan), var(--cyan)) left bottom / 0 1px no-repeat; transition: background-size .5s cubic-bezier(.2, .7, .2, 1);
+  }
+  .envoy:hover .cta { background-size: 100% 1px; }
+
+  figcaption {
+    position: absolute; left: 16px; bottom: 14px;
+    font: 300 10px var(--font-mono); letter-spacing: .14em; text-transform: lowercase;
+    color: var(--ink); mix-blend-mode: difference;
+    opacity: 0; translate: 0 6px; transition: opacity .4s, translate .4s;
+  }
+  .tile:hover figcaption { opacity: 1; translate: 0 0; }
+
+
+  /* commit calendar: hairline cells, filled by activity level; days switch on left to right with the tile */
+  .commits { container-type: size; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: clamp(14px, 1.6vw, 24px); color: var(--ink); text-decoration: none; }
+  .cal { display: grid; gap: 2px; grid-template: repeat(7, auto) / repeat(var(--weeks), 1fr); }  /* square days at the bottom, whatever the tile height */
+  .cal i { aspect-ratio: 1;
+    outline: .5px solid rgba(243, 217, 177, .12); outline-offset: -.5px;
+    background: rgb(243 217 177 / calc(var(--l) * 22%));
+    opacity: clamp(0, (var(--t) * 1.3 - var(--x)) * 6, 1);
+  }
+  .commits p { order: -1; margin: 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; font: 300 10px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+  .commits b { flex-basis: 100%; font: 200 min(16cqi, 30cqh) / .9 var(--font-sans); letter-spacing: -.04em; color: var(--ink); }
+  .commits span { margin-left: auto; text-transform: lowercase; transition: color .3s; }
+  .commits:hover span { color: var(--ink); }
+  @container (max-height: 140px) { .cal { display: none; } }   /* too short for square days: the number alone carries it */
+
+  @media (max-width: 760px) {
+    .bento { grid-template: repeat(8, 1fr) / 1fr 1fr; grid-template-areas: 'a a' 'a a' 'b c' 'd c' 'g g' 'e e' 'e e' 'f f'; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gallery { height: 100svh; } .envoy .edge { animation: none; } }
+</style>

@@ -1,0 +1,176 @@
+---
+// No bar: just text floating in the corners. The name (top-left) lives in the Hero signature.
+const links = [
+  ['Proyectos', '#proyectos'],
+  ['Sobre mí', '#sobre-mi'],
+  ['Contacto', '#contacto'],
+];
+---
+
+<header class="nav">
+  <nav aria-label="Principal">
+    {links.map(([label, href], i) => (
+      <a class="mono" href={href}><sup>0{i + 1}</sup><span class="clip"><span data-text={label}>{label}</span></span></a>
+    ))}
+  </nav>
+  <a class="cta" href="#contacto" aria-label="Hablemos">
+    <span class="cta-fill"></span>
+    <span class="cta-label" aria-hidden="true">{[...'Hablemos'].map((c, i) => <span style={`--i:${i}`}>{c}</span>)}</span>
+    <span class="cta-arrow" aria-hidden="true"><span>↗</span><span>↗</span></span>
+  </a>
+</header>
+
+<script>
+  // CTA: magnetic pull (same gravity idea as the hero) and a fill bursting from the cursor.
+  const cta = document.querySelector<HTMLElement>('.cta')!;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const aim = (e: PointerEvent) => {
+    const r = cta.getBoundingClientRect();
+    cta.style.setProperty('--x', `${e.clientX - r.left}px`);
+    cta.style.setProperty('--y', `${e.clientY - r.top}px`);
+    if (!still && e.pointerType === 'mouse')
+      cta.style.translate = `${(e.clientX - r.left - r.width / 2) * 0.25}px ${(e.clientY - r.top - r.height / 2) * 0.35}px`;
+  };
+
+  cta.addEventListener('pointerenter', aim);
+  cta.addEventListener('pointermove', aim);
+  cta.addEventListener('pointerleave', (e) => {
+    aim(e); // fill collapses back toward where the cursor left
+    cta.style.translate = '';
+  });
+</script>
+
+<style>
+  .nav {
+    position: fixed;
+    z-index: 10;
+    top: clamp(20px, 4vw, 40px);
+    right: clamp(16px, 4vw, 48px);
+    display: flex;
+    align-items: center;
+    gap: clamp(20px, 3vw, 44px);
+    animation: in 1.6s 1.2s both;
+  }
+  /* opacity only: filter/transform here would trap the mobile fixed nav inside .nav */
+  @keyframes in { from { opacity: 0; } }
+
+  nav { display: flex; gap: clamp(16px, 2vw, 28px); }
+  nav a { color: var(--ink); text-decoration: none; display: flex; gap: 4px; white-space: nowrap; }
+  nav sup { font-size: 8px; color: var(--dim); }
+
+  /* text roll on hover: the label slides up, an orange copy slides in from below */
+  .clip { display: block; height: 1.4em; line-height: 1.4; overflow: hidden; }
+  .clip span { position: relative; display: block; transition: transform .5s cubic-bezier(.16, 1, .3, 1); }
+  .clip span::after {
+    content: attr(data-text);
+    position: absolute; left: 0; top: 100%;
+    color: #ff9a3c;
+  }
+  nav a:hover .clip span { transform: translateY(-100%); }
+
+  /* ---------- CTA: small square, a comet of light orbiting the border like the accretion disk ---------- */
+  @property --a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+
+  .cta {
+    --x: 50%; --y: 50%;
+    position: relative;
+    isolation: isolate;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: var(--ink);
+    text-decoration: none;
+    background: rgba(0, 0, 0, .35);
+    backdrop-filter: blur(10px);
+    transition: translate .6s cubic-bezier(.16, 1, .3, 1), color .4s, box-shadow .6s;
+  }
+  .cta:hover { transition: color .4s, box-shadow .6s; color: #000; box-shadow: 0 0 36px rgba(255, 154, 60, .5); }
+
+  /* 1px border = faint ring + a bright comet that orbits it (spins faster on hover) */
+  .cta::before {
+    content: '';
+    position: absolute; inset: 0;
+    padding: 1px;
+    background:
+      conic-gradient(from var(--a), transparent 0 62%, #ff9a3c 84%, #fff 88%, transparent 92%),
+      linear-gradient(rgba(243, 217, 177, .22), rgba(243, 217, 177, .22));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: orbit 3.5s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes orbit { to { --a: 360deg; } }
+  .cta:hover::before { animation-duration: .9s; }
+
+  /* corner ticks that snap out on hover, like a viewfinder locking on */
+  .cta::after {
+    content: '';
+    position: absolute; inset: -5px;
+    --c: linear-gradient(#ff9a3c 0 0);
+    background:
+      var(--c) top left / 6px 1px, var(--c) top left / 1px 6px,
+      var(--c) top right / 6px 1px, var(--c) top right / 1px 6px,
+      var(--c) bottom left / 6px 1px, var(--c) bottom left / 1px 6px,
+      var(--c) bottom right / 6px 1px, var(--c) bottom right / 1px 6px;
+    background-repeat: no-repeat;
+    opacity: 0;
+    scale: .8;
+    transition: opacity .3s, scale .6s cubic-bezier(.16, 1, .3, 1);
+    pointer-events: none;
+  }
+  .cta:hover::after { opacity: 1; scale: 1; }
+
+  /* fill bursts out of the exact point the cursor enters, and collapses where it leaves */
+  .cta-fill {
+    position: absolute; inset: 0;
+    z-index: -1;
+    background: radial-gradient(circle at var(--x) var(--y), #ffd29a, #ff9a3c 60%);
+    clip-path: circle(0 at var(--x) var(--y));
+    transition: clip-path .7s cubic-bezier(.16, 1, .3, 1);
+  }
+  .cta:hover .cta-fill { clip-path: circle(160% at var(--x) var(--y)); }
+
+  /* hyperspace jump: each letter stretches into a streak, exits right, re-enters from the left, in a wave */
+  .cta-label { display: flex; white-space: pre; }
+  .cta-label span { display: inline-block; transform-origin: left center; }
+  .cta:hover .cta-label span { animation: warp .7s cubic-bezier(.7, 0, .2, 1) calc(var(--i) * 35ms) both; }
+  @keyframes warp {
+    45% { translate: .9em 0; scale: 2.4 .5; filter: blur(1.5px); opacity: 0; }
+    46% { translate: -.9em 0; scale: 2.4 .5; }
+    100% { translate: 0; scale: 1; filter: none; opacity: 1; }
+  }
+
+  /* arrow flies out top-right, a fresh one arrives from bottom-left */
+  .cta-arrow { display: grid; overflow: hidden; font-size: 13px; }
+  .cta-arrow span { grid-area: 1 / 1; transition: translate .5s cubic-bezier(.16, 1, .3, 1); }
+  .cta-arrow span + span { translate: -110% 110%; }
+  .cta:hover .cta-arrow span:first-child { translate: 110% -110%; }
+  .cta:hover .cta-arrow span + span { translate: 0 0; transition-delay: .08s; }
+
+  a:focus-visible { outline: 1px solid #ff9a3c; outline-offset: 4px; }
+
+  /* phone: nav moves to a floating bar at the bottom (thumb reach), CTA stays top-right */
+  @media (max-width: 640px) {
+    nav {
+      position: fixed;
+      bottom: max(16px, env(safe-area-inset-bottom));
+      left: 50%;
+      translate: -50% 0;
+      gap: 22px;
+      padding: 14px 22px;
+      border: 1px solid rgba(243, 217, 177, .15);
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(14px);
+    }
+    nav a { letter-spacing: .16em; }
+    nav sup { display: none; }
+    .cta { padding: 9px 10px 9px 12px; font-size: 10px; }
+  }
+</style>
