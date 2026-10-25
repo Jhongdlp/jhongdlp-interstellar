@@ -1,6 +1,7 @@
 import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
+  site: 'https://jhongdlp.com',
   i18n: { locales: ['es', 'en'], defaultLocale: 'es' },
   // self-hosted at build time: no render-blocking request to Google, files preloaded from our own origin
   fonts: [
