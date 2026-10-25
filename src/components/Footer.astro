@@ -1,7 +1,9 @@
 ---
 import { siGithub, siX } from 'simple-icons';
+import { tr } from '../i18n';
+const t = tr(Astro.currentLocale);
 // Epilogue: the Endurance in orbit over a new world. The name rests on the planet's dark side.
-const links = [['Inicio', '#'], ['Sobre mí', '#sobre-mi'], ['Proyectos', '#proyectos'], ['Contacto', '#contacto']];
+const links = [[t('Inicio', 'Home'), '#'], [t('Sobre mí', 'About'), '#sobre-mi'], [t('Proyectos', 'Work'), '#proyectos'], [t('Contacto', 'Contact'), '#contacto']];
 // same networks as the live footer on jhongdlp.com; LinkedIn is no longer in simple-icons, so its glyph is inline
 const social = [
   ['GitHub', 'https://github.com/Jhongdlp', siGithub.path],
@@ -16,12 +18,12 @@ const year = new Date().getFullYear();
   <canvas aria-hidden="true"></canvas>
 
   <div class="cols">
-    <nav aria-label="Pie de página">
-      <p class="mono">Navegación</p>
+    <nav aria-label={t('Pie de página', 'Footer')}>
+      <p class="mono">{t('Navegación', 'Navigation')}</p>
       {links.map(([label, href]) => <a href={href}><span class="clip"><span data-text={label}>{label}</span></span></a>)}
     </nav>
     <div>
-      <p class="mono">Redes</p>
+      <p class="mono">{t('Redes', 'Social')}</p>
       <div class="icons">
         {social.map(([label, href, d]) => (
           <a href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener" aria-label={label} title={label}>
@@ -31,7 +33,7 @@ const year = new Date().getFullYear();
       </div>
     </div>
     <div>
-      <p class="mono">Hora local · Ecuador</p>
+      <p class="mono">{t('Hora local · Ecuador', 'Local time · Ecuador')}</p>
       <p class="clock"><time>--:--</time><span class="mono">GMT−5</span></p>
     </div>
   </div>
@@ -42,8 +44,8 @@ const year = new Date().getFullYear();
 
   <div class="base mono">
     <span>© {year} Jhongdlp</span>
-    <button type="button" class="up" aria-label="Volver al inicio">
-      <span class="mono">Volver al horizonte</span>
+    <button type="button" class="up" aria-label={t('Volver al inicio', 'Back to top')}>
+      <span class="mono">{t('Volver al horizonte', 'Back to the horizon')}</span>
       <span class="chip" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
         <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" /></svg>

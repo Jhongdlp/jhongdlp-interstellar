@@ -1,16 +1,18 @@
 ---
+import { tr } from '../i18n';
+const t = tr(Astro.currentLocale);
+const en = Astro.currentLocale === 'en';
 // After the projects: a line of light cuts the black and opens like an old TV switching on.
 // The bento repeats that gesture: each tile turns on from its own line, one after another.
 // Grid gaps are 1px hairlines, so the whole bento reads as one panel cut into pieces.
 // Behind it, through the same slit, the background turns from the projects' black to a warm umber
 // and a three.js tesseract (strands of light on every axis) takes the camera in.
-const tiles: { alt: string; area: string; src: string; pos?: string }[] = [
-  { alt: 'Ponencia — TICEC, CEDIA 2024', area: 'a', src: '/gallery/ponencia.webp', pos: '30% 45%' },
-  { alt: 'Paper — Revista Tecnológica ESPOL', area: 'b', src: '/gallery/paper.webp', pos: '50% 18%' },
-  { alt: 'Oficina', area: 'c', src: '/gallery/oficina.webp', pos: '55% 30%' },
-  { alt: 'CEDIA — Parque Tecnológico Indoamérica', area: 'd', src: '/gallery/cedia.webp', pos: '50% 62%' },
-  { alt: 'Presentación de la estrategia de uso de IA para Ecuador — MINTEL', area: 'g', src: '/gallery/estrategia-ia.webp', pos: '76% 55%' },
+const tiles: { alt: string; area: string; src: string; pos?: string; i: number; cap?: boolean }[] = [
+  { alt: t('Ponencia — TICEC, CEDIA 2024', 'Talk — TICEC, CEDIA 2024'), area: 'a', src: '/gallery/ponencia.webp', pos: '30% 45%', i: 1 },
+  { alt: t('Oficina', 'Office'), area: 'b', src: '/gallery/oficina.webp', pos: '55% 30%', i: 2, cap: false },
+  { alt: t('CEDIA — Parque Tecnológico Indoamérica', 'CEDIA — Indoamérica Technology Park'), area: 'd', src: '/gallery/cedia.webp', pos: '50% 62%', i: 4 },
 ];
+const PAPER_URL = 'https://rte.espol.edu.ec/index.php/tecnologica/es/article/view/1595';
 
 // commit history, read from the public contributions page at build time (no token).
 // If GitHub is down or changes its HTML, the tile just shows an empty calendar frame.
@@ -27,36 +29,49 @@ const total = html.match(/([\d,]+)\s+contributions\s+in the last year/)?.[1];
 
 ---
 
-<section class="gallery" aria-label="Galería">
+<section class="gallery" aria-label={t('Galería', 'Gallery')}>
   <div class="stage">
     <div class="line" aria-hidden="true"></div>
     <div class="room" aria-hidden="true"><canvas></canvas></div>
     <div class="bento">
-      {tiles.map((t, i) => (
-        <figure class="tile" style={`grid-area:${t.area};--i:${i + 1}`}>
+      {tiles.map((t) => (
+        <figure class="tile" style={`grid-area:${t.area};--i:${t.i}`}>
           <img src={t.src} alt={t.alt} loading="lazy" decoding="async" style={t.pos && `object-position:${t.pos}`} />
-          <figcaption>{t.alt}</figcaption>
+          {t.cap !== false && <figcaption>{t.alt}</figcaption>}
         </figure>
       ))}
       <a class="tile envoy" style="grid-area:e;--i:0" href={ENVOY_URL} target="_blank" rel="noopener">
         <i class="edge" aria-hidden="true"></i>
         <i class="seal" aria-hidden="true"></i>
         <div class="top">
-          <i class="mark itu" role="img" aria-label="Unión Internacional de Telecomunicaciones"></i>
+          <i class="mark itu" role="img" aria-label={t('Unión Internacional de Telecomunicaciones', 'International Telecommunication Union')}></i>
           <i class="rule" aria-hidden="true"></i>
-          <i class="mark un" role="img" aria-label="Naciones Unidas"></i>
+          <i class="mark un" role="img" aria-label={t('Naciones Unidas', 'United Nations')}></i>
           <span>Generation<br />Connect</span>
         </div>
         <div class="body">
           <h3>Americas <em>Youth Envoy</em></h3>
-          <p class="meta"><span class="org">UIT · Naciones Unidas</span><span>Ecuador</span><span class="cta">itu.int ↗</span></p>
+          <p class="meta"><span class="org">{t('UIT · Naciones Unidas', 'ITU · United Nations')}</span><span>Ecuador</span><span class="cta">itu.int ↗</span></p>
+        </div>
+      </a>
+      <a class="tile paper" style="grid-area:c;--i:3" href={PAPER_URL} target="_blank" rel="noopener">
+        <i class="glow" aria-hidden="true"></i>
+        <i class="stamp" aria-hidden="true"></i>
+        <div class="top">
+          <i class="mark espol" role="img" aria-label="ESPOL"></i>
+          <i class="rule" aria-hidden="true"></i>
+          <span>Revista<br />Tecnológica</span>
+        </div>
+        <div class="body">
+          <h3>{en ? <>Academic chatbot with <em>hybrid retrieval</em> and local LLMs</> : <>Chatbot académico con <em>recuperación híbrida</em> y LLMs locales</>}</h3>
+          <p class="meta"><span>Paper · 2026</span><span class="cta">{t('leer ↗', 'read ↗')}</span></p>
         </div>
       </a>
       <a class="tile commits" style="grid-area:f;--i:6" href={`https://github.com/${USER}`} target="_blank" rel="noopener">
-        <div class="cal" style={`--weeks:${weeks}`} role="img" aria-label={`Calendario de commits de ${USER}${total ? `: ${total} contribuciones en el último año` : ''}`}>
+        <div class="cal" style={`--weeks:${weeks}`} role="img" aria-label={`${t('Calendario de commits de', 'Commit calendar of')} ${USER}${total ? `: ${total} ${t('contribuciones en el último año', 'contributions in the last year')}` : ''}`}>
           {days.map((x) => <i style={`grid-area:${x.d + 1}/${x.w + 1};--l:${x.l};--x:${(x.w / weeks).toFixed(3)}`} title={x.date} />)}
         </div>
-        <p>{total && <b>{total}</b>} commits · último año <span>github/{USER}</span></p>
+        <p>{total && <b>{total}</b>} commits · {t('último año', 'last year')} <span>github/{USER}</span></p>
       </a>
     </div>
   </div>
@@ -124,7 +139,7 @@ const total = html.match(/([\d,]+)\s+contributions\s+in the last year/)?.[1];
     display: grid; gap: 1px; padding: 1px; min-height: 0;
     background: rgba(243, 217, 177, .22);
     grid-template: 1fr 1fr 1.4fr / 1.2fr 1fr .8fr 1fr .85fr;
-    grid-template-areas: 'a a b c g' 'a a d c g' 'e e e f f';
+    grid-template-areas: 'a a b c c' 'a a d c c' 'e e e f f';
     clip-path: inset(calc((1 - var(--o)) * 50%) 0);
   }
 
@@ -198,13 +213,62 @@ const total = html.match(/([\d,]+)\s+contributions\s+in the last year/)?.[1];
   }
   .envoy:hover .cta { background-size: 100% 1px; }
 
+  /* caption sits on its own dark scrim, so it reads over any photo */
   figcaption {
-    position: absolute; left: 16px; bottom: 14px;
-    font: 300 10px var(--font-mono); letter-spacing: .14em; text-transform: lowercase;
-    color: var(--ink); mix-blend-mode: difference;
+    position: absolute; inset: auto 0 0; padding: 40px 16px 14px;
+    background: linear-gradient(transparent, rgba(10, 7, 5, .85));
+    font: 400 10px var(--font-mono); letter-spacing: .14em; text-transform: lowercase; color: var(--ink);
     opacity: 0; translate: 0 6px; transition: opacity .4s, translate .4s;
   }
   .tile:hover figcaption { opacity: 1; translate: 0 0; }
+
+  /* paper: minimal and typographic. Night-navy with a slow gold aurora, a faint ruled-paper grid
+     fading out from the corner, and the ESPOL seal set huge and cropped like a pressed stamp.
+     The seal (Wikimedia Commons) is a mask, so it wears the tile's gold. Confirm ESPOL allows its use. */
+  .paper.paper { --gold: #f2b705; background: #0b1030; }
+  .paper {
+    container-type: size; display: flex; flex-direction: column; justify-content: space-between;
+    padding: clamp(14px, 7cqh, 32px) clamp(16px, 6cqi, 36px); color: var(--ink); text-decoration: none;
+  }
+  .paper::before {                                                /* ruled grid, only near the seal */
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(rgba(242, 183, 5, .07) 1px, transparent 1px) 0 0 / 100% 22px,
+                linear-gradient(90deg, rgba(242, 183, 5, .07) 1px, transparent 1px) 0 0 / 22px 100%;
+    mask: radial-gradient(90% 90% at 100% 100%, #000, transparent 70%);
+    opacity: var(--t);                                            /* switches on with the tile */
+  }
+  .paper .glow {
+    position: absolute; inset: -30%; pointer-events: none; filter: blur(30px);
+    background: radial-gradient(40% 35% at 75% 80%, rgba(242, 183, 5, .28), transparent 70%),
+                radial-gradient(45% 40% at 20% 15%, rgba(70, 90, 200, .35), transparent 70%),
+                radial-gradient(35% 30% at 95% 20%, rgba(130, 60, 160, .18), transparent 70%);
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  @keyframes drift { to { translate: -6% 4%; rotate: 8deg; } }
+  .mark.espol { --src: url(/gallery/espol-logo.png); height: clamp(18px, 9cqh, 34px); aspect-ratio: 1999 / 811; color: var(--gold); }
+  .paper .rule { width: 1px; align-self: stretch; background: rgba(243, 217, 177, .25); }
+  .paper .stamp {
+    --src: url(/gallery/espol.svg); position: absolute; right: -18%; bottom: -30%; height: 120%; aspect-ratio: 1;
+    background: rgba(242, 183, 5, .1); mask: var(--src) center / contain no-repeat;
+    animation: spin 90s linear infinite; transition: background .6s;
+  }
+  @keyframes spin { to { rotate: 360deg; } }
+  .paper:hover .stamp { background: rgba(242, 183, 5, .18); }
+  .paper::after { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+  .paper .top { position: relative; display: flex; gap: clamp(12px, 1.2vw, 18px); align-items: center; font: 700 10px / 1.4 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); }
+  .paper .body { position: relative; }
+  .paper h3 { max-width: 15ch; margin: 0 0 clamp(10px, 5cqh, 20px); font: 700 min(7.4cqi, 9cqh) / 1.02 var(--font-sans); letter-spacing: -.035em; color: var(--ink); text-wrap: balance; }
+  .paper h3 em { font-style: normal; color: var(--gold); }
+  .paper .meta {
+    margin: 0; display: flex; padding-top: clamp(6px, 3cqh, 12px); border-top: 1px solid rgba(243, 217, 177, .18);
+    font: 600 10px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(243, 217, 177, .75);
+  }
+  .paper .cta {
+    margin-left: auto; padding-bottom: 3px; color: var(--gold);
+    background: linear-gradient(var(--gold), var(--gold)) left bottom / 0 1px no-repeat; transition: background-size .5s cubic-bezier(.2, .7, .2, 1);
+  }
+  .paper:hover .cta { background-size: 100% 1px; }
+  @container (max-height: 150px) { .paper .top span { display: none; } }
 
 
   /* commit calendar: hairline cells, filled by activity level; days switch on left to right with the tile */
@@ -222,7 +286,7 @@ const total = html.match(/([\d,]+)\s+contributions\s+in the last year/)?.[1];
   @container (max-height: 140px) { .cal { display: none; } }   /* too short for square days: the number alone carries it */
 
   @media (max-width: 760px) {
-    .bento { grid-template: repeat(8, 1fr) / 1fr 1fr; grid-template-areas: 'a a' 'a a' 'b c' 'd c' 'g g' 'e e' 'e e' 'f f'; }
+    .bento { grid-template: repeat(7, 1fr) / 1fr 1fr; grid-template-areas: 'a a' 'a a' 'b c' 'd c' 'e e' 'e e' 'f f'; }
   }
-  @media (prefers-reduced-motion: reduce) { .gallery { height: 100svh; } .envoy .edge { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .gallery { height: 100svh; } .envoy .edge, .paper .glow, .paper .stamp { animation: none; } }
 </style>

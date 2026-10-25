@@ -1,4 +1,6 @@
 ---
+import { tr } from '../i18n';
+const t = tr(Astro.currentLocale);
 // Selected work. Pinned over the end of the hero's fall: in the black, a point of light turns on into the
 // first screen (old-TV style); then scrolling drives a curved 3D track of projects through space, with
 // wireframe cubes floating at different depths (CSS 3D only: the WebGL is already off by now).
@@ -7,31 +9,31 @@
 // shots: still images shown as a mini bento grid (game in progress). Without any, a flat placeholder.
 type Project = { name: string; kind: string; sub: string; desc: string; meta: string; url?: string; tint: string; gif?: string; mgif?: string; mascot?: string; shots?: string[]; others?: string[]; cta?: string };
 const projects: Project[] = [
-  { name: 'INSIDEEBB', kind: 'Estudio de Software e IA', sub: 'Producto, agentes de IA y e-commerce', tint: '#8f6cf0',
-    desc: 'Sitio del estudio con identidad editorial, sistema bilingüe ES/EN, páginas de producto y blog técnico. Diseño de sistemas y software a medida.',
+  { name: 'INSIDEEBB', kind: t('Estudio de Software e IA', 'Software & AI Studio'), sub: t('Producto, agentes de IA y e-commerce', 'Product, AI agents and e-commerce'), tint: '#8f6cf0',
+    desc: t('Sitio del estudio con identidad editorial, sistema bilingüe ES/EN, páginas de producto y blog técnico. Diseño de sistemas y software a medida.', 'Studio website with an editorial identity, bilingual ES/EN system, product pages and a technical blog. Systems design and custom software.'),
     meta: 'Quito, Ecuador · 2026', url: 'https://insideebb.com', mascot: '/projects/insideebb-logo.svg', gif: '/projects/insideebb.mp4', mgif: '/projects/insideebb-m.mp4' },
-  { name: 'Global CEC', kind: 'Academia de inglés online', sub: 'Landing de becas y aula virtual', tint: '#d42a2a',
-    desc: 'Programa de inglés alineado al MCER (A1 a B2) con postulación a becas, clases en vivo, asistente virtual y un aula con progreso, ejercicios interactivos y certificación.',
+  { name: 'Global CEC', kind: t('Academia de inglés online', 'Online English academy'), sub: t('Landing de becas y aula virtual', 'Scholarship landing and virtual classroom'), tint: '#d42a2a',
+    desc: t('Programa de inglés alineado al MCER (A1 a B2) con postulación a becas, clases en vivo, asistente virtual y un aula con progreso, ejercicios interactivos y certificación.', 'CEFR-aligned English program (A1 to B2) with scholarship applications, live classes, a virtual assistant and a classroom with progress tracking, interactive exercises and certification.'),
     meta: 'Ecuador · 2026', gif: '/projects/globalcec.mp4', mgif: '/projects/globalcec-m.mp4', mascot: '/projects/glo.webp' },
-  { name: 'Bizzio', kind: 'E-commerce con IA', sub: 'Plataforma SaaS de tiendas online', tint: '#7b5cff',
-    desc: 'Constructor de tiendas donde un vendedor de IA atiende y vende 24/7. Pagos locales integrados (Payphone y De Una), catálogo, estado de pedidos y cero código.',
+  { name: 'Bizzio', kind: t('E-commerce con IA', 'AI-powered e-commerce'), sub: t('Plataforma SaaS de tiendas online', 'SaaS platform for online stores'), tint: '#7b5cff',
+    desc: t('Constructor de tiendas donde un vendedor de IA atiende y vende 24/7. Pagos locales integrados (Payphone y De Una), catálogo, estado de pedidos y cero código.', 'Store builder where an AI salesperson serves and sells 24/7. Built-in local payments (Payphone and De Una), catalog, order tracking and zero code.'),
     meta: 'Ecuador · 2026', url: 'https://bizzio.shop', mascot: '/projects/bizzio-icono.svg',
     gif: '/projects/bizzio.mp4', mgif: '/projects/bizzio-m.mp4' },
-  { name: 'Kammel', kind: 'Cliente SSH para Android', sub: 'Terminal y editor de código open-source', tint: '#ff5a36',
-    desc: 'App móvil todo-en-uno: cliente SSH, terminal, explorador SFTP y editor de código. Permite ejecutar agentes de IA (Claude Code, Gemini CLI) directamente por SSH.',
+  { name: 'Kammel', kind: t('Cliente SSH para Android', 'SSH client for Android'), sub: t('Terminal y editor de código open-source', 'Open-source terminal and code editor'), tint: '#ff5a36',
+    desc: t('App móvil todo-en-uno: cliente SSH, terminal, explorador SFTP y editor de código. Permite ejecutar agentes de IA (Claude Code, Gemini CLI) directamente por SSH.', 'All-in-one mobile app: SSH client, terminal, SFTP explorer and code editor. Run AI agents (Claude Code, Gemini CLI) directly over SSH.'),
     meta: 'Open source · 2026', url: 'https://kammel.app', mascot: '/projects/kammel-icono.webp',
     gif: '/projects/kammel.mp4', mgif: '/projects/kammel-m.mp4' },
-  { name: 'TensorMesh', kind: 'Algoritmos de IA en 3D', sub: 'Nebulosa de embeddings · 50.000 palabras en 3D', tint: '#c04dff',
-    desc: 'Atlas vectorial navegable: cada punto es una palabra y su posición sale de un embedding de 300 dimensiones. Vuela hasta una palabra, mira sus vecinos, compara y resuelve analogías en vivo sobre tu GPU.',
+  { name: 'TensorMesh', kind: t('Algoritmos de IA en 3D', 'AI algorithms in 3D'), sub: t('Nebulosa de embeddings · 50.000 palabras en 3D', 'Embedding nebula · 50,000 words in 3D'), tint: '#c04dff',
+    desc: t('Atlas vectorial navegable: cada punto es una palabra y su posición sale de un embedding de 300 dimensiones. Vuela hasta una palabra, mira sus vecinos, compara y resuelve analogías en vivo sobre tu GPU.', 'A navigable vector atlas: each point is a word, placed by a 300-dimensional embedding. Fly to a word, explore its neighbors, compare and solve analogies live on your GPU.'),
     meta: 'Web · WebGPU · 2026', url: 'https://tensormesh.vercel.app/embedding-nebula',
     gif: '/projects/tensormesh.mp4', mgif: '/projects/tensormesh-m.mp4' },
-  { name: 'Space Colony', kind: 'Videojuego en desarrollo', sub: 'Simulador de colonización espacial', tint: '#f08a3c',
-    desc: 'Lanza cohetes con física newtoniana real, construye estaciones en órbita y aterriza en otros planetas. Se simula en 2D y se renderiza en 3D con three.js, pensado para móvil.',
-    meta: 'Android · En desarrollo · 2026',
+  { name: 'Space Colony', kind: t('Videojuego en desarrollo', 'Video game in development'), sub: t('Simulador de colonización espacial', 'Space colonization simulator'), tint: '#f08a3c',
+    desc: t('Lanza cohetes con física newtoniana real, construye estaciones en órbita y aterriza en otros planetas. Se simula en 2D y se renderiza en 3D con three.js, pensado para móvil.', 'Launch rockets with real Newtonian physics, build stations in orbit and land on other planets. Simulated in 2D and rendered in 3D with three.js, designed for mobile.'),
+    meta: t('Android · En desarrollo · 2026', 'Android · In development · 2026'),
     shots: ['/projects/sc-despegue.webp', '/projects/sc-estacion.webp', '/projects/sc-marte.webp'] },
-  { name: 'Otros proyectos', kind: 'Open source y experimentos', sub: 'Lo que construyo entre proyecto y proyecto', tint: '#f6e4c6',
-    desc: 'Un jefe de videojuego movido por el conectoma de una mosca, una Dynamic Island para monitorear agentes de IA, un detector de código muerto y más. Todo en mi GitHub.',
-    meta: 'GitHub · Jhongdlp', url: 'https://github.com/Jhongdlp', cta: 'Ver GitHub ↗',
+  { name: t('Otros proyectos', 'Other projects'), kind: t('Open source y experimentos', 'Open source and experiments'), sub: t('Lo que construyo entre proyecto y proyecto', 'What I build between projects'), tint: '#f6e4c6',
+    desc: t('Un jefe de videojuego movido por el conectoma de una mosca, una Dynamic Island para monitorear agentes de IA, un detector de código muerto y más. Todo en mi GitHub.', "A video game boss driven by a fly's connectome, a Dynamic Island for monitoring AI agents, a dead-code detector and more. All on my GitHub."),
+    meta: 'GitHub · Jhongdlp', url: 'https://github.com/Jhongdlp', cta: t('Ver GitHub ↗', 'View GitHub ↗'),
     others: ['FlyBrain', 'Rimarc', 'obit', 'Raccoony', 'UTITech', 'ApiRag', 'GlazeTerminal'] },
 ];
 // floating objects: x in "project" units along the track, y in svh, z in px (negative = far), s = size px
@@ -47,7 +49,7 @@ const decos = [
 <section class="work" style={`--n:${projects.length}`} aria-labelledby="work-t">
   <span id="proyectos" class="anchor"></span>
   <div class="stage">
-    <h2 id="work-t" class="sr">Proyectos selectos</h2>
+    <h2 id="work-t" class="sr">{t('Proyectos selectos', 'Selected work')}</h2>
     <canvas class="room" aria-hidden="true"></canvas>
 
     <div class="scene">
@@ -64,7 +66,7 @@ const decos = [
               <div class="device">
                 <div class={p.mgif ? 'glass m' : 'glass'}>{i === 0 && <span class="crt" aria-hidden="true"></span>}<div class="pic">
                   {p.gif?.endsWith('.mp4')
-                    ? <video muted loop playsinline preload="metadata" aria-label={`${p.name} en uso`}>
+                    ? <video muted loop playsinline preload="metadata" aria-label={`${p.name} ${t('en uso', 'in use')}`}>
                         {p.mgif && <source src={p.mgif} type="video/mp4" media="(max-width: 900px), (max-aspect-ratio: 1/1)" />}
                         <source src={p.gif} type="video/mp4" />
                       </video>
@@ -72,14 +74,14 @@ const decos = [
                     ? <ul class="others">{p.others.map((o) => <li>{o}</li>)}</ul>
                     : p.shots
                     ? <div class="bento">
-                        {p.shots.map((src) => <img src={src} alt={`${p.name}: escena del juego`} loading="lazy" decoding="async" />)}
-                        <div class="soon"><span class="mono">Próximamente</span></div>
+                        {p.shots.map((src) => <img src={src} alt={`${p.name}: ${t('escena del juego', 'game scene')}`} loading="lazy" decoding="async" />)}
+                        <div class="soon"><span class="mono">{t('Próximamente', 'Coming soon')}</span></div>
                       </div>
                     : p.gif
-                    ? <img src={p.gif} alt={`${p.name} en uso`} loading="lazy" decoding="async" />
-                    : <div class="ph" aria-hidden="true"><i></i><span>{p.name}</span><span class="mono">GIF · próximamente</span></div>}
+                    ? <img src={p.gif} alt={`${p.name} ${t('en uso', 'in use')}`} loading="lazy" decoding="async" />
+                    : <div class="ph" aria-hidden="true"><i></i><span>{p.name}</span><span class="mono">{t('GIF · próximamente', 'GIF · coming soon')}</span></div>}
                 </div>
-                {p.gif?.endsWith('.mp4') && <button class="replay" type="button" aria-label="Repetir desde el inicio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /></svg></button>}
+                {p.gif?.endsWith('.mp4') && <button class="replay" type="button" aria-label={t('Repetir desde el inicio', 'Replay from the start')}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /></svg></button>}
                 </div>
               </div>
             </div>
@@ -88,7 +90,7 @@ const decos = [
               <div class="ln"><h3 style="--k:1">{p.name}</h3></div>
               <div class="ln"><p class="sub" style="--k:2">{p.sub}</p></div>
               <div class="ln"><p class="desc" style="--k:3">{p.desc}</p></div>
-              <div class="ln"><p class="foot" style="--k:4"><span class="mono">{p.meta}</span>{p.url && <a href={p.url} target="_blank" rel="noopener">{p.cta ?? 'Ver sitio ↗'}</a>}{p.mascot && <img class="mascot" src={p.mascot} alt="" loading="lazy" />}</p></div>
+              <div class="ln"><p class="foot" style="--k:4"><span class="mono">{p.meta}</span>{p.url && <a href={p.url} target="_blank" rel="noopener">{p.cta ?? t('Ver sitio ↗', 'Visit site ↗')}</a>}{p.mascot && <img class="mascot" src={p.mascot} alt="" loading="lazy" />}</p></div>
             </div>
           </article>
         ))}
@@ -338,9 +340,11 @@ const decos = [
     .card { grid-template-columns: calc(100vw - 32px); gap: 24px; }
     .device { border-radius: 14px; }
     .glass { border-radius: 8px; }
-    .glass.m { aspect-ratio: 4 / 5; max-height: 56svh; margin-inline: auto; }
+    /* the whole 4:5 capture, at a height that leaves room for the title under it */
+    .glass.m { aspect-ratio: 4 / 5; width: min(100%, 41svh); margin-inline: auto; }
+    .glass img, .glass video { object-fit: contain; }
     h3 { font-size: 32px; }
-    .desc { font-size: 13px; }
+    .desc { display: none; } /* less text on phones: the description stays on desktop */
     .sub { font-size: 14px; }
   }
 

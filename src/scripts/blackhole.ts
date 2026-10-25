@@ -42,11 +42,10 @@ export async function createBlackHole(canvas: HTMLCanvasElement, onFrame?: (seco
   composer.addPass(new OutputPass());
 
   let dirty = true;
-  let quality = 1; // adaptive: drops when the GPU can't hold the frame rate
   const resize = () => {
     const { clientWidth: w, clientHeight: h } = canvas;
     const budget = Math.sqrt(MAX_PIXELS / Math.max(w * h, 1));
-    const s = Math.min(Math.min(devicePixelRatio, 1.5) * 0.75, budget) * quality;
+    const s = Math.min(Math.min(devicePixelRatio, 1.5) * 0.75, budget);
     renderer.setPixelRatio(s);
     renderer.setSize(w, h, false);
     composer.setPixelRatio(s);
@@ -69,7 +68,7 @@ export async function createBlackHole(canvas: HTMLCanvasElement, onFrame?: (seco
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const t0 = performance.now();
-  let last = 0, lastDraw = 0, sum = 0, n = 0;
+  let last = 0;
   const frame = (now: number) => {
     const dt = now - last;
     if (dt < FRAME_MS - 1) return;
@@ -89,16 +88,6 @@ export async function createBlackHole(canvas: HTMLCanvasElement, onFrame?: (seco
     uniforms.uTime.value = reduceMotion ? 0 : t;
     composer.render();
     onFrame?.(t);
-    // adaptive resolution: if 60 frames average under ~43fps, shave 15% off the scale (floor 0.5)
-    const gap = now - lastDraw;
-    lastDraw = now;
-    if (gap < 100) { sum += gap; n++; }   // ignore pauses (tab hidden, scrolled away)
-    if (n === 60) {
-      const avg = sum / n;
-      if (avg > FRAME_MS * 1.4 && quality > 0.5) { quality *= 0.85; resize(); }
-      else if (avg < FRAME_MS * 1.1 && quality < 1) { quality = Math.min(1, quality / 0.85); resize(); } // recover after a hiccup
-      sum = n = 0;
-    }
   };
 
   return {

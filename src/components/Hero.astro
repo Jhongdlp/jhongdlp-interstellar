@@ -2,29 +2,32 @@
 import { siAnthropic, siDocker, siFastapi, siFramer, siGit, siGithub, siHuggingface, siJupyter, siLangchain, siLinux, siNextdotjs,
   siNodedotjs, siNumpy, siOllama, siPandas, siPostgresql, siPostman, siPython, siPytorch, siReact, siSupabase, siTailwindcss,
   siTensorflow, siTypescript, siVercel } from 'simple-icons';
+import { tr } from '../i18n';
+const en = Astro.currentLocale === 'en';
+const t = tr(Astro.currentLocale);
 
 // Skills: simple-icons glyphs, or a short text tile where there is no logo
 type Skill = { title: string; path?: string; text?: string };
 const stack: [string, Skill[]][] = [
   ['Frontend', [siNextdotjs, siReact, siTypescript, siTailwindcss, siFramer]],
   ['Backend', [siPython, siNodedotjs, siFastapi, siPostgresql, siSupabase, siDocker]],
-  ['IA y datos', [siAnthropic, siLangchain, siHuggingface, siPytorch, siTensorflow, siOllama, siNumpy, siPandas,
+  [t('IA y datos', 'AI & data'), [siAnthropic, siLangchain, siHuggingface, siPytorch, siTensorflow, siOllama, siNumpy, siPandas,
     { title: 'Seaborn', text: 'sns' }, { title: 'Matplotlib', text: 'plt' }, siJupyter]],
-  ['Herramientas', [siGit, siGithub, siVercel, siPostman, siLinux]],
+  [t('Herramientas', 'Tools'), [siGit, siGithub, siVercel, siPostman, siLinux]],
 ];
 let n = 0; // running index for the staggered entrance
-const headline = 'Creo productos inteligentes, del concepto a la producción.'.split(' ');
+const headline = t('Creo productos inteligentes, del concepto a la producción.', 'I build intelligent products, from concept to production.').split(' ');
 // Full-screen black hole scene; scrolling pushes the camera in on the person for the "Sobre mí" block.
 ---
 
 <div class="dive">
 <section class="hero">
   <canvas aria-hidden="true"></canvas>
-  <a class="sig" href="/" aria-label="jhongdlp — inicio">
+  <a class="sig" href={en ? '/en/' : '/'} aria-label={t('jhongdlp — inicio', 'jhongdlp — home')}>
     <span class="sig-name" aria-hidden="true"><span class="l">J</span>{[...'hongdlp'].map((c) => <span class="l">{c}</span>)}<sup>®</sup></span>
-    <span class="mono">Portafolio · ©2026</span>
+    <span class="mono">{t('Portafolio', 'Portfolio')} · ©2026</span>
   </a>
-  <button class="fs" type="button" aria-pressed="false" aria-label="Pantalla completa" title="Pantalla completa">
+  <button class="fs" type="button" aria-pressed="false" aria-label={t('Pantalla completa', 'Fullscreen')} title={t('Pantalla completa', 'Fullscreen')}>
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
       <path class="in" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
       <path class="out" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
@@ -51,18 +54,22 @@ const headline = 'Creo productos inteligentes, del concepto a la producción.'.s
   </div>
   <div class="copy">
     <h2 id="sobre-mi-t" style="--d:0">{headline.map((w, i) => <><span class:list={['w', { thin: i < 3 }]}><span style={`--i:${i}`}>{w}</span></span>{' '}</>)}</h2>
-    <p class="lead" style="--d:1"><span class="first">Desarrollador full-stack y especialista en IA que conecta personas con marcas y negocios a través de código y diseño inteligente.</span> Una combinación de ingeniería sólida y ejecución refinada para entregar resultados premium — o dicho de otro modo, <strong>«crear cosas geniales en internet»</strong>.</p>
+    {en
+      ? <p class="lead" style="--d:1"><span class="first">Full-stack developer and AI specialist connecting people with brands and businesses through code and intelligent design.</span> A blend of solid engineering and refined execution to deliver premium results — or, put another way, <strong>“making great things on the internet”</strong>.</p>
+      : <p class="lead" style="--d:1"><span class="first">Desarrollador full-stack y especialista en IA que conecta personas con marcas y negocios a través de código y diseño inteligente.</span> Una combinación de ingeniería sólida y ejecución refinada para entregar resultados premium — o dicho de otro modo, <strong>«crear cosas geniales en internet»</strong>.</p>}
     <ul class="facts" style="--d:2">
       <li>Quito, Ecuador</li>
-      <li class="num">0°13′S 78°31′O</li>
+      <li class="num">0°13′S 78°31′{t('O', 'W')}</li>
       <li class="num"><time class="clock">--:--:--</time></li>
-      <li class="live">Disponible para proyectos</li>
+      <li class="live">{t('Disponible para proyectos', 'Available for projects')}</li>
     </ul>
   </div>
 </section>
 </div>
 
 <script>
+  import { tr } from '../i18n';
+  const t = tr(document.documentElement.lang);
   // Load three.js only after first paint, and only render while the hero is on screen.
   const hero = document.querySelector<HTMLElement>('.hero')!;
   const canvas = hero.querySelector('canvas')!;
@@ -142,7 +149,7 @@ const headline = 'Creo productos inteligentes, del concepto a la producción.'.s
   const setClean = (on: boolean) => {
     document.documentElement.classList.toggle('clean', on);
     fs.setAttribute('aria-pressed', String(on));
-    fs.ariaLabel = fs.title = on ? 'Salir de pantalla completa' : 'Pantalla completa';
+    fs.ariaLabel = fs.title = on ? t('Salir de pantalla completa', 'Exit fullscreen') : t('Pantalla completa', 'Fullscreen');
   };
   fs.addEventListener('click', () => {
     const clean = document.documentElement.classList.contains('clean');

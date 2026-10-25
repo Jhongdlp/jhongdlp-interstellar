@@ -7,9 +7,14 @@ import Work from '../components/Work.astro';
 import Gallery from '../components/Gallery.astro';
 import Contact from '../components/Contact.astro';
 import Footer from '../components/Footer.astro';
+import { tr } from '../i18n';
+
+// "/" is Spanish, "/en/" English
+export const getStaticPaths = () => [{ params: { lang: undefined } }, { params: { lang: 'en' } }];
+const t = tr(Astro.currentLocale);
 ---
 
-<Base title="Jhon — Portafolio" description="Portafolio de Jhon, desarrollador creativo.">
+<Base title={t('Jhon — Portafolio', 'Jhon — Portfolio')} description={t('Portafolio de Jhon, desarrollador creativo.', 'Portfolio of Jhon, creative developer.')}>
   <Loader />
   <Header />
   <main>

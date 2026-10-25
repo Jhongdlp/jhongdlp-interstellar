@@ -1,6 +1,7 @@
 import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
+  i18n: { locales: ['es', 'en'], defaultLocale: 'es' },
   // self-hosted at build time: no render-blocking request to Google, files preloaded from our own origin
   fonts: [
     { provider: fontProviders.google(), name: 'Montserrat', cssVariable: '--font-sans', weights: [300, 400, 500, 600], subsets: ['latin'], fallbacks: ['sans-serif'] },

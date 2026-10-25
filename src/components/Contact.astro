@@ -1,6 +1,8 @@
 ---
+import { tr } from '../i18n';
+const t = tr(Astro.currentLocale);
 // Last scene: Murph's room. Typing writes binary into falling dust; sending lifts it into one point of light.
-const title = ['Hablemos', 'de tu', 'proyecto.'];
+const title = Astro.currentLocale === 'en' ? ["Let's talk", 'about your', 'project.'] : ['Hablemos', 'de tu', 'proyecto.'];
 const EMAIL = 'hello@jhongdlp.com';
 ---
 
@@ -10,14 +12,14 @@ const EMAIL = 'hello@jhongdlp.com';
 
   <div class="intro">
     <h2 id="contacto-t">{title.map((w, i) => <span class="w"><span style={`--i:${i}`}>{w}</span></span>)}</h2>
-    <p class="lead">¿Tienes un proyecto, una colaboración o una pregunta? Escríbeme y te respondo pronto.</p>
+    <p class="lead">{t('¿Tienes un proyecto, una colaboración o una pregunta? Escríbeme y te respondo pronto.', 'Have a project, a collaboration or a question? Write to me and I’ll get back to you soon.')}</p>
     <!-- copies the address; if the clipboard is blocked it opens the mail app instead -->
-    <button type="button" class="copy" data-email={EMAIL} aria-label={`Copiar ${EMAIL}`}>
+    <button type="button" class="copy" data-email={EMAIL} aria-label={`${t('Copiar', 'Copy')} ${EMAIL}`}>
       <span class="mail">{EMAIL}</span>
       <span class="hint" aria-hidden="true">
         <svg class="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15V6.5A1.5 1.5 0 0 1 6.5 5H15" /></svg>
         <svg class="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-        <span class="t">Copiar</span>
+        <span class="t">{t('Copiar', 'Copy')}</span>
       </span>
     </button>
     <p class="sr" role="status" aria-live="polite"></p>
@@ -25,22 +27,22 @@ const EMAIL = 'hello@jhongdlp.com';
 
   <form class="card" novalidate>
     <label class="field">
-      <span class="mono">Nombre</span>
-      <input name="name" type="text" autocomplete="name" required maxlength="100" placeholder="Tu nombre" />
+      <span class="mono">{t('Nombre', 'Name')}</span>
+      <input name="name" type="text" autocomplete="name" required maxlength="100" placeholder={t('Tu nombre', 'Your name')} />
     </label>
     <label class="field">
       <span class="mono">Email</span>
-      <input name="email" type="email" autocomplete="email" required maxlength="200" placeholder="tu@correo.com" />
+      <input name="email" type="email" autocomplete="email" required maxlength="200" placeholder={t('tu@correo.com', 'you@email.com')} />
     </label>
     <label class="field">
-      <span class="mono">Mensaje</span>
-      <textarea name="message" rows="2" required maxlength="5000" placeholder="Cuéntame qué necesitas…"></textarea>
+      <span class="mono">{t('Mensaje', 'Message')}</span>
+      <textarea name="message" rows="2" required maxlength="5000" placeholder={t('Cuéntame qué necesitas…', 'Tell me what you need…')}></textarea>
     </label>
     <!-- bots fill every field; people never see this one -->
     <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" />
 
     <button type="submit">
-      <span class="label">Enviar mensaje</span>
+      <span class="label">{t('Enviar mensaje', 'Send message')}</span>
       <!-- two arrows: on hover the first flies out right, the second slides in from the left -->
       <span class="arrow" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -53,6 +55,8 @@ const EMAIL = 'hello@jhongdlp.com';
 
 <script>
   import { BITS } from '../scripts/signal';
+  import { tr } from '../i18n';
+  const t = tr(document.documentElement.lang);
 
   const root = document.querySelector<HTMLElement>('.contact')!;
   const form = root.querySelector<HTMLFormElement>('form')!;
@@ -77,12 +81,12 @@ const EMAIL = 'hello@jhongdlp.com';
     const email = copy.dataset.email!;
     try { await navigator.clipboard.writeText(email); } catch { location.href = `mailto:${email}`; return; }
     copy.classList.add('done');
-    copy.querySelector('.t')!.textContent = 'Copiado';
-    root.querySelector('.sr')!.textContent = 'Email copiado';
+    copy.querySelector('.t')!.textContent = t('Copiado', 'Copied');
+    root.querySelector('.sr')!.textContent = t('Email copiado', 'Email copied');
     clearTimeout(copied);
     copied = setTimeout(() => {
       copy.classList.remove('done');
-      copy.querySelector('.t')!.textContent = 'Copiar';
+      copy.querySelector('.t')!.textContent = t('Copiar', 'Copy');
       root.querySelector('.sr')!.textContent = '';
     }, 2000);
   });
@@ -95,11 +99,11 @@ const EMAIL = 'hello@jhongdlp.com';
     if (data.company) return; // honeypot
     if (!form.checkValidity()) {
       form.querySelector<HTMLElement>(':invalid')?.focus();
-      return say('Faltan datos: nombre, un email válido y tu mensaje.', 'err');
+      return say(t('Faltan datos: nombre, un email válido y tu mensaje.', 'Missing info: name, a valid email and your message.'), 'err');
     }
     form.classList.add('busy');
     button.disabled = true;
-    label.textContent = 'Enviando…';
+    label.textContent = t('Enviando…', 'Sending…');
     say('');
     signal?.send(1);
     const wait = new Promise((r) => setTimeout(r, 2600)); // let the dust leave before the answer lands
@@ -113,14 +117,14 @@ const EMAIL = 'hello@jhongdlp.com';
       if (!res.ok) throw new Error();
       form.reset();
       show('');
-      say('Mensaje enviado. Te respondo pronto.', 'ok');
+      say(t('Mensaje enviado. Te respondo pronto.', 'Message sent. I’ll get back to you soon.'), 'ok');
     } catch {
       await wait;
-      say('No se pudo enviar. Escríbeme a hello@jhongdlp.com.', 'err');
+      say(t('No se pudo enviar. Escríbeme a hello@jhongdlp.com.', 'Couldn’t send it. Email me at hello@jhongdlp.com.'), 'err');
     } finally {
       form.classList.remove('busy');
       button.disabled = false;
-      label.textContent = 'Enviar mensaje';
+      label.textContent = t('Enviar mensaje', 'Send message');
       setTimeout(() => signal?.send(0), 1800);
     }
   });

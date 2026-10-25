@@ -7,16 +7,32 @@ interface Props {
   description: string;
 }
 const { title, description } = Astro.props;
+const lang = Astro.currentLocale ?? 'es';
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#000000" />
     <title>{title}</title>
+    <link rel="alternate" hreflang="es" href={new URL('/', Astro.site ?? Astro.url)} />
+    <link rel="alternate" hreflang="en" href={new URL('/en/', Astro.site ?? Astro.url)} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site ?? Astro.url)} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site ?? Astro.url)} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content={lang === 'en' ? 'en_US' : 'es_EC'} />
+    <!-- og.jpg: 1200×630 capture of the hero; retake it if the scene changes -->
+    <meta property="og:image" content={new URL('/og.jpg', Astro.site ?? Astro.url)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Jhongdlp — agujero negro sobre un campo de trigo" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <Font cssVariable="--font-sans" preload={[{ weight: 500 }, { weight: 600 }]} />
     <Font cssVariable="--font-mono" preload={[{ weight: 300 }]} />
   </head>
